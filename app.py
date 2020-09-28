@@ -9,7 +9,7 @@ app = Flask(__name__)
 import cs304dbi as dbi
 # import cs304dbi_sqlite3 as dbi
 
-import random
+import random, playlist 
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -25,21 +25,22 @@ app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 def index():
     return render_template('main.html',title='Hello')
 
-@app.route('/greet/', methods=["GET", "POST"])
-def greet():
-    if request.method == 'GET':
-        return render_template('greet.html', title='Customized Greeting')
-    else:
-        try:
-            username = request.form['username'] # throws error if there's trouble
-            flash('form submission successful')
-            return render_template('greet.html',
-                                   title='Welcome '+username,
-                                   name=username)
+'''
+Displays name, genre, and creator for a playlist, along with all the
+songs that have been added to the playlist
+'''
+@app.route('/playlist/<int:pid>', methods=["GET", "POST"]) 
+def playlistPage(pid):
+    conn = dbi.connect()
+    # TODO: implement search functionality to search for playlists
+    playlistInfo = playlist.get_playlist_info(conn,pid)
+    nestedSongs = playlist.get_playlist_songs(conn,pid)
+    songs = [elt[0] for elt in nestedSongs]
+    return render_template('playlist.html', 
+                            playlistInfo=playlistInfo, 
+                            songs=songs, 
+                            page_title=playlistInfo['playlist_name'])
 
-        except Exception as err:
-            flash('form submission error'+str(err))
-            return redirect( url_for('index') )
 
 @app.route('/formecho/', methods=['GET','POST'])
 def formecho():
@@ -66,7 +67,7 @@ def testform():
 @app.before_first_request
 def init_db():
     dbi.cache_cnf()
-    dbi.use('wmdb') # or whatever db
+    dbi.use('coda_db') # or whatever db
 
 if __name__ == '__main__':
     import sys, os
