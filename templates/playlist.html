@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block main_content %}      
+    <h2>{{playlistInfo.playlist_name}}</h2>
+    <p>Genre: {{playlistInfo.playlist_genre}}</p>
+    <p>Made by: {{playlistInfo.user_name}}</p>
+ 
+
+    <div> Songs in this playlist:
+        <ul>
+            {% for song in songs %} 
+            <li>{{song}}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}
