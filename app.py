@@ -8,8 +8,10 @@ app = Flask(__name__)
 
 import pymysql
 import cs304dbi as dbi
-import userpage
-import random
+
+# import cs304dbi_sqlite3 as dbi
+
+import random, playlist, userpage 
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -25,6 +27,7 @@ app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 def index():
     return render_template('main.html',title='Hello')
 
+
 @app.route('/search/')
 def search():
     conn  = dbi.connect()
@@ -33,9 +36,21 @@ def search():
     print(users)
     if users:
         return render_template("search.html", users = users)
-    else:
-        flash('No Results Found For "' + value + '"')
-        return render_template("search.html")
+'''
+Displays name, genre, and creator for a playlist, along with all the
+songs that have been added to the playlist
+'''
+@app.route('/playlist/<int:pid>', methods=["GET", "POST"]) 
+def playlistPage(pid):
+    conn = dbi.connect()
+    # TODO: implement search functionality to search for playlists
+    playlistInfo = playlist.get_playlist_info(conn,pid)
+    nestedSongs = playlist.get_playlist_songs(conn,pid)
+    songs = [elt[0] for elt in nestedSongs]
+    return render_template('playlist.html', 
+                            playlistInfo=playlistInfo, 
+                            songs=songs, 
+                            page_title=playlistInfo['playlist_name'])
 
 @app.route('/user/<user_id>')
 def user(user_id):
@@ -44,12 +59,6 @@ def user(user_id):
     friendsList = userpage.get_friends(conn, user_id)
     playlists = userpage.get_user_playlists(conn, user_id)
     return (render_template("user.html", user= user, friendsList = friendsList, playlists = playlists))
-
-@app.route('/playlist/<playlist_id>')
-def playlist(playlist_id):
-    conn = dbi.connect()
-    playlist = userpage.get_playlist(conn, playlist_id)
-    return (render_template("playlist.html", playlist = playlist))
 
 @app.before_first_request
 def init_db():

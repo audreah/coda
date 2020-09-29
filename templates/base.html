@@ -5,7 +5,7 @@
     <meta name=author content="">
     <title>{{ page_title }}</title>
     <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
-    {% block head_stuff %} {% endblock %}
+    <!-- {% block head_stuff %} {% endblock %} -->
 </head>
 <body>
 
@@ -19,6 +19,7 @@
 {% endif %}
 {% endwith %}
             
+
 {% block nav %}
 <form class="search" method="GET" action= "/search/">
   <p><label>search: <input type="text" name="searchbar"></label>
