@@ -1,0 +1,17 @@
+<!-- Author: Audrea Huang - Fall T1 2020 -->
+<!-- Template for describing information about an album. 
+Will display the person's name, birthday, who added them, 
+as well as any movies they have acted in. -->
+{% extends "base.html" %}
+
+{% block main_content %}
+
+<H1 class='song'> {{song.song_title}} </H1>
+<p>Title: {{song.song_title}}</p>
+<p>Artist: {{song.artist_name}}</p> 
+<p>Appears on: {{song.album_title}}</p>
+<p>Release Year: {{song.release_year}}</p>
+<p>Added by: {{song.user_name}}</p>
+
+
+{% endblock %}
