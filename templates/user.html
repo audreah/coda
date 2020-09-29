@@ -1,0 +1,25 @@
+{% extends "base.html" %} 
+
+{% block main_content %}
+
+<h1>{{user.user_name}}</h1>
+
+<h2>Friends:</h2>
+<ol>
+    {% for friend in friendsList %}
+        <li>
+            <a href= "{{ url_for('user', user_id = friend.user_id) }}">{{friend.user_name}}</a>
+        </li>
+    {% endfor %}
+</ol>
+<br>
+<h2>Playlists:</h2>
+<ol>
+    {% for playlist in playlists %}
+        <li>
+            <a href= "{{ url_for('playlist', playlist_id = playlist.playlist_id) }}">{{playlist.playlist_name}}</a>
+        </li>
+    {% endfor %}
+</ol> 
+
+{% endblock %}

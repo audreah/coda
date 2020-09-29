@@ -1,0 +1,15 @@
+{% extends "base.html" %} 
+
+{% block main_content %}
+
+<h1>Top Result</h1>
+
+<ol>
+    {% for user in users %}
+        <li>
+            <a href= "{{ url_for('user', user_id = user.user_id) }}">{{user.user_name}}</a>
+        </li>
+    {% endfor %}
+</ol>
+
+{% endblock %}

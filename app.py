@@ -6,10 +6,12 @@ app = Flask(__name__)
 # one or the other of these. Defaults to MySQL (PyMySQL)
 # change comment characters to switch to SQLite
 
+import pymysql
 import cs304dbi as dbi
+
 # import cs304dbi_sqlite3 as dbi
 
-import random, playlist 
+import random, playlist, userpage 
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -25,6 +27,15 @@ app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 def index():
     return render_template('main.html',title='Hello')
 
+
+@app.route('/search/')
+def search():
+    conn  = dbi.connect()
+    value = request.args.get("searchbar")
+    users = userpage.search_user(conn, value)
+    print(users)
+    if users:
+        return render_template("search.html", users = users)
 '''
 Displays name, genre, and creator for a playlist, along with all the
 songs that have been added to the playlist
@@ -41,28 +52,13 @@ def playlistPage(pid):
                             songs=songs, 
                             page_title=playlistInfo['playlist_name'])
 
-
-@app.route('/formecho/', methods=['GET','POST'])
-def formecho():
-    if request.method == 'GET':
-        return render_template('form_data.html',
-                               method=request.method,
-                               form_data=request.args)
-    elif request.method == 'POST':
-        return render_template('form_data.html',
-                               method=request.method,
-                               form_data=request.form)
-    else:
-        # maybe PUT?
-        return render_template('form_data.html',
-                               method=request.method,
-                               form_data={})
-
-@app.route('/testform/')
-def testform():
-    # these forms go to the formecho route
-    return render_template('testform.html')
-
+@app.route('/user/<user_id>')
+def user(user_id):
+    conn = dbi.connect()
+    user = userpage.get_user_id(conn, user_id)
+    friendsList = userpage.get_friends(conn, user_id)
+    playlists = userpage.get_user_playlists(conn, user_id)
+    return (render_template("user.html", user= user, friendsList = friendsList, playlists = playlists))
 
 @app.before_first_request
 def init_db():
