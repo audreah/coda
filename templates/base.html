@@ -20,6 +20,13 @@
 {% endwith %}
             
 
+{% block nav %}
+<form class="search" method="GET" action= "/search/">
+  <p><label>search: <input type="text" name="searchbar"></label>
+  <input type="submit" value="search"></p>
+</form>
+{% endblock %}
+
 {% block main_content %}
 <h1>Welcome!</h1>
 {% endblock %}
