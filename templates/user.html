@@ -17,7 +17,7 @@
 <ol>
     {% for playlist in playlists %}
         <li>
-            <a href= "{{ url_for('playlist', playlist_id = playlist.playlist_id) }}">{{playlist.playlist_name}}</a>
+            <a href= "{{ url_for('playlistPage', pid = playlist.playlist_id) }}">{{playlist.playlist_name}}</a>
         </li>
     {% endfor %}
 </ol> 
