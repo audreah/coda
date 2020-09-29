@@ -6,9 +6,9 @@ app = Flask(__name__)
 # one or the other of these. Defaults to MySQL (PyMySQL)
 # change comment characters to switch to SQLite
 
+import pymysql
 import cs304dbi as dbi
-# import cs304dbi_sqlite3 as dbi
-
+import userpage
 import random
 
 app.secret_key = 'your secret here'
@@ -25,48 +25,36 @@ app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 def index():
     return render_template('main.html',title='Hello')
 
-@app.route('/greet/', methods=["GET", "POST"])
-def greet():
-    if request.method == 'GET':
-        return render_template('greet.html', title='Customized Greeting')
+@app.route('/search/')
+def search():
+    conn  = dbi.connect()
+    value = request.args.get("searchbar")
+    users = userpage.search_user(conn, value)
+    print(users)
+    if users:
+        return render_template("search.html", users = users)
     else:
-        try:
-            username = request.form['username'] # throws error if there's trouble
-            flash('form submission successful')
-            return render_template('greet.html',
-                                   title='Welcome '+username,
-                                   name=username)
+        flash('No Results Found For "' + value + '"')
+        return render_template("search.html")
 
-        except Exception as err:
-            flash('form submission error'+str(err))
-            return redirect( url_for('index') )
+@app.route('/user/<user_id>')
+def user(user_id):
+    conn = dbi.connect()
+    user = userpage.get_user_id(conn, user_id)
+    friendsList = userpage.get_friends(conn, user_id)
+    playlists = userpage.get_user_playlists(conn, user_id)
+    return (render_template("user.html", user= user, friendsList = friendsList, playlists = playlists))
 
-@app.route('/formecho/', methods=['GET','POST'])
-def formecho():
-    if request.method == 'GET':
-        return render_template('form_data.html',
-                               method=request.method,
-                               form_data=request.args)
-    elif request.method == 'POST':
-        return render_template('form_data.html',
-                               method=request.method,
-                               form_data=request.form)
-    else:
-        # maybe PUT?
-        return render_template('form_data.html',
-                               method=request.method,
-                               form_data={})
-
-@app.route('/testform/')
-def testform():
-    # these forms go to the formecho route
-    return render_template('testform.html')
-
+@app.route('/playlist/<playlist_id>')
+def playlist(playlist_id):
+    conn = dbi.connect()
+    playlist = userpage.get_playlist(conn, playlist_id)
+    return (render_template("playlist.html", playlist = playlist))
 
 @app.before_first_request
 def init_db():
     dbi.cache_cnf()
-    dbi.use('wmdb') # or whatever db
+    dbi.use('coda_db') # or whatever db
 
 if __name__ == '__main__':
     import sys, os

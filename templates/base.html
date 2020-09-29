@@ -20,13 +20,10 @@
 {% endwith %}
             
 {% block nav %}
-<nav>
-  <ul>
-    <li><a href="{{url_for('index')}}">home</a></li>
-    <li><a href="{{url_for('greet')}}">greet</a></li>
-    <li><a href="{{url_for('testform')}}">testform</a></li>
-  </ul>
-</nav>
+<form class="search" method="GET" action= "/search/">
+  <p><label>search: <input type="text" name="searchbar"></label>
+  <input type="submit" value="search"></p>
+</form>
 {% endblock %}
 
 {% block main_content %}
