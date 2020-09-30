@@ -5,6 +5,7 @@
     <meta name=author content="">
     <title>{{ page_title }}</title>
     <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
     <!-- {% block head_stuff %} {% endblock %} -->
 </head>
 <body>
@@ -21,7 +22,7 @@
             
 
 {% block nav %}
-<form class="search" method="GET" action= "/search/">
+<form class="search" method="GET" action= "/query/">
   <p><label>search: <input type="text" name="searchbar"></label>
   <input type="submit" value="search"></p>
 </form>
