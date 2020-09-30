@@ -23,8 +23,8 @@ Given a connection object and playlist id, gets the songs
 in that playlist
 '''
 def get_playlist_songs(conn,pid):
-    curs = dbi.cursor(conn)
-    sql = '''select song_title 
+    curs = dbi.dict_cursor(conn)
+    sql = '''select song_title, song_id 
             from coda_song 
                 inner join coda_playlist_songs using (song_id)
             where playlist_id = %s'''

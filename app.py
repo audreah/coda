@@ -47,14 +47,13 @@ def playlistPage(pid):
     # TODO: implement search functionality to search for playlists
     playlistInfo = playlist.get_playlist_info(conn,pid)
     nestedSongs = playlist.get_playlist_songs(conn,pid)
-    songs = [elt[0] for elt in nestedSongs]
     if playlistInfo == None: # playlist not found
         return render_template('notFound.html',
             type='No playlist', page_title="Playlist Not Found")
     else: # playlist found
         return render_template('playlist.html', 
                             playlistInfo=playlistInfo, 
-                            songs=songs, 
+                            songs=nestedSongs, 
                             page_title=playlistInfo['playlist_name'])
 
 @app.route('/user/<user_id>')

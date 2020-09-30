@@ -9,9 +9,15 @@
     <div> Songs in this playlist:
         <ul>
             {% for song in songs %} 
-            <li>{{song}}</li>
+            <li>
+                <a href="{{url_for('song', sid = song.song_id)}}"">{{song.song_title}}</a>
+            </li>
             {% endfor %}
         </ul>
+    </div>
+
+    <div>
+        Edit this playlist:
     </div>
 
 {% endblock %}
