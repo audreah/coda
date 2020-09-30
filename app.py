@@ -51,10 +51,39 @@ def playlistPage(pid):
         return render_template('notFound.html',
             type='No playlist', page_title="Playlist Not Found")
     else: # playlist found
-        return render_template('playlist.html', 
+        if (request.method == "GET"):
+            return render_template('playlist.html', 
                             playlistInfo=playlistInfo, 
                             songs=nestedSongs, 
                             page_title=playlistInfo['playlist_name'])
+        else: #update playlist
+            submitType = request.form.get('submit')
+
+            if (submitType == 'update'): 
+                newName = request.form.get('playlist-name')
+                pUser = playlistInfo["user_name"]
+                uid = playlistInfo["created_by"]
+                pid = playlistInfo["playlist_id"]
+                # return str(playlist.check_unique_playlist_name(conn,newName,uid))
+
+                #There cannot be multiple playlists with the same name
+                if playlist.check_unique_playlist_name(conn, newName, uid):
+                    playlist.updatePlaylist(conn,newName,pid)
+                    playlistInfo = playlist.get_playlist_info(conn,pid)
+                    flash(newName + '  was updated successfully')
+                    
+                    return render_template('playlist.html', 
+                            playlistInfo=playlistInfo, 
+                            songs=nestedSongs, 
+                            page_title=playlistInfo['playlist_name'])
+                else:
+                    flash('Error: A playlist with this name already exists')
+
+                    return render_template('playlist.html', 
+                            playlistInfo=playlistInfo, 
+                            songs=nestedSongs, 
+                            page_title=playlistInfo['playlist_name'])
+
 
 @app.route('/user/<user_id>')
 def user(user_id):

@@ -17,7 +17,19 @@
     </div>
 
     <div>
-        Edit this playlist:
+        <p>Edit this playlist:</p>
+
+        <form method="POST" action="/playlist/{{playlistInfo.playlist_id}}">
+            <table>
+              <tr>
+                <td><label for="playlist-name">Playlist Name</label></td>
+                <td><input id="playlist-name" name='playlist-name' value="{{playlistInfo.playlist_name}}"></td> 
+              </tr>
+            </table>
+            <input class = 'button' type="submit" name="submit" value="update">
+            <input class = 'button' type="submit" name="submit" value="delete">
+          </form>
+    </p>
     </div>
 
 {% endblock %}
