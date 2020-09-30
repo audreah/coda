@@ -121,20 +121,20 @@ def query():
     query = request.args['searchbar'] # query text
     albumMatches = albumPage.get_similar_albums(conn,query)
     songMatches = songPage.get_similar_songs(conn,query)
-    users = userpage.search_user(conn, query)
+    userMatches = userpage.search_user(conn, query)
 
     # no matches
-    if len(albumMatches) == 0 and len(songMatches) == 0 and not users:
+    if not albumMatches and not songMatches and not users:
         return render_template('notFound.html', type='Nothing',
         page_title="No matches")
     # one album matches
-    elif len(albumMatches) == 1 and len(songMatches) == 0 and not users:
+    elif len(albumMatches) == 1 and not songMatches and not users:
         return redirect(url_for('album', aid=albumMatches[0]['album_id']))
     # one song matches
     elif len(songMatches) == 1 and not users:
         return redirect(url_for('song', sid=songMatches[0]['song_id']))
     
-    elif users:
+    elif userMatches and not songMatches and not albumMatches:
         return render_template("search.html", users = users)
 
     # multiple matches
@@ -150,8 +150,13 @@ def query():
             songID = songDict['song_id']
             songs.append(songPage.get_song(conn, songID))
 
+        users = []
+        for userDict in userMatches:
+            userID = userDict['user_id']
+            users.append(userpage.get_user_id(conn, userID))
+
         return render_template('multiple.html', 
-            albums=albums, songs=songs,
+            albums=albums, songs=songs, users=users,
             name = query,
             page_title="Mutliple Results Found")
 
