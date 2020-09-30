@@ -36,6 +36,7 @@ def search():
     print(users)
     if users:
         return render_template("search.html", users = users)
+
 '''
 Displays name, genre, and creator for a playlist, along with all the
 songs that have been added to the playlist
@@ -89,7 +90,7 @@ def album(aid):
 
 ''' 
 This is the route for song lookups. It renders a template 
-with information about the artist and which album it appears on.
+with the artist's name and the title of the album on which album it appears.
 
 :param sid: a unique song id from the coda_song table
 :returns: not found page if song does not exist in the database
@@ -108,26 +109,34 @@ def song(sid):
             song=song_info,
             page_title='Song | ' + song_info['song_title'])
 
-''' Renders the template for the user's search. '''
+'''
+Renders the template for the user's search.
+:returns: the item's (album, song, or user) individual page if there is
+          exactly one match
+          otherwise, lists out all matches with links to their individual pages.
+'''
 @app.route('/query/', methods=['GET'])
 def query():
     conn = dbi.connect()
-    query = request.args['query'] # query text
-
+    query = request.args['searchbar'] # query text
     albumMatches = albumPage.get_similar_albums(conn,query)
     songMatches = songPage.get_similar_songs(conn,query)
+    userMatches = userpage.search_user(conn, query)
 
     # no matches
-    if len(albumMatches) == 0 and len(songMatches) == 0:
-        return render_template('notFound.html', type='nothing',
-        page_title="Album Not Found")
+    if not albumMatches and not songMatches and not users:
+        return render_template('notFound.html', type='Nothing',
+        page_title="No matches")
     # one album matches
-    elif len(albumMatches) == 1 and len(songMatches) == 0:
+    elif len(albumMatches) == 1 and not songMatches and not users:
         return redirect(url_for('album', aid=albumMatches[0]['album_id']))
     # one song matches
-    elif len(songMatches) == 1:
+    elif len(songMatches) == 1 and not users:
         return redirect(url_for('song', sid=songMatches[0]['song_id']))
     
+    elif userMatches and not songMatches and not albumMatches:
+        return render_template("search.html", users = users)
+
     # multiple matches
     else:
         # get the ids for each album and song that matches the query
@@ -141,8 +150,13 @@ def query():
             songID = songDict['song_id']
             songs.append(songPage.get_song(conn, songID))
 
+        users = []
+        for userDict in userMatches:
+            userID = userDict['user_id']
+            users.append(userpage.get_user_id(conn, userID))
+
         return render_template('multiple.html', 
-            albums=albums, songs=songs,
+            albums=albums, songs=songs, users=users,
             name = query,
             page_title="Mutliple Results Found")
 
