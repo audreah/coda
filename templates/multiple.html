@@ -1,27 +1,26 @@
-<!-- Authors: Audrea Huang - Fall T1 2020 -->
+<!-- Author: Audrea Huang - Fall T1 2020 -->
 <!-- This is the html template for saerch queries that result in 
 multiple matches.  -->
 {% extends "base.html" %}
 
 {% block main_content %}
 
-<p>
-    <!-- Case 1: If the user is searching for a person -->
     
-    Albums matching {{name}}
+<h3> Albums matching {{name}} </h3>
+
     <ul>
         {% for album in albums %} 
             <li><a href="{{ url_for('album', aid=album.album_id) }}">{{album.album_title}}</a></li>
         {% endfor %}
     </ul>
 
-    Songs matching {{name}}
+    
+<h3> Songs matching {{name}} </h3>
     <ul>
         {% for song in songs %} 
             <li><a href="{{ url_for('song', sid=song.song_id) }}">{{song.song_title}}</a></li>
         {% endfor %}
     </ul>
     
-</p>
 
 {% endblock %}
