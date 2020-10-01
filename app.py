@@ -165,14 +165,16 @@ def query():
     userMatches = userpage.search_user(conn, query)
 
     # no matches
-    if not albumMatches and not songMatches and not users:
+    if not albumMatches and not songMatches and not userMatches:
         return render_template('notFound.html', type='Nothing',
         page_title="No matches")
+
     # one album matches
-    elif len(albumMatches) == 1 and not songMatches and not users:
+    elif len(albumMatches) == 1 and not songMatches and not userMatches:
         return redirect(url_for('album', aid=albumMatches[0]['album_id']))
+
     # one song matches
-    elif len(songMatches) == 1 and not users:
+    elif len(songMatches) == 1 and not userMatches:
         return redirect(url_for('song', sid=songMatches[0]['song_id']))
     
     elif userMatches and not songMatches and not albumMatches:
