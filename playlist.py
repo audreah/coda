@@ -47,11 +47,11 @@ def check_unique_playlist_name(conn,pName, uid):
     return False
 
 
-def updatePlaylist(conn,pName,pid):
+def updatePlaylist(conn,pid,newName,newGenre):
     curs = dbi.cursor(conn)
     sql = '''update coda_playlist
-            set playlist_name = %s 
+            set playlist_name = %s, playlist_genre = %s
             where playlist_id = %s'''
-    curs.execute(sql,[pName,pid])
+    curs.execute(sql,[newName,newGenre,pid])
     conn.commit()
 

@@ -3,7 +3,11 @@
 {% block main_content %}      
     <h2>{{playlistInfo.playlist_name}}</h2>
     <p>Genre: {{playlistInfo.playlist_genre}}</p>
-    <p>Made by: {{playlistInfo.user_name}}</p>
+    <p>Made by: 
+        <a href= "{{url_for('user', user_id = playlistInfo.created_by)}}"">
+            {{playlistInfo.user_name}}
+        </a>
+    </p>
  
 
     <div> Songs in this playlist:
@@ -24,6 +28,10 @@
               <tr>
                 <td><label for="playlist-name">Playlist Name</label></td>
                 <td><input id="playlist-name" name='playlist-name' value="{{playlistInfo.playlist_name}}"></td> 
+              </tr>
+              <tr>
+                <td><label for="playlist-genre">Genre</label></td>
+                <td><input id="playlist-genre" name='playlist-genre' value="{{playlistInfo.playlist_genre}}"></td> 
               </tr>
             </table>
             <input class = 'button' type="submit" name="submit" value="update">
