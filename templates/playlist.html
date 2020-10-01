@@ -3,15 +3,41 @@
 {% block main_content %}      
     <h2>{{playlistInfo.playlist_name}}</h2>
     <p>Genre: {{playlistInfo.playlist_genre}}</p>
-    <p>Made by: {{playlistInfo.user_name}}</p>
+    <p>Made by: 
+        <a href= "{{url_for('user', user_id = playlistInfo.created_by)}}"">
+            {{playlistInfo.user_name}}
+        </a>
+    </p>
  
 
     <div> Songs in this playlist:
         <ul>
             {% for song in songs %} 
-            <li>{{song}}</li>
+            <li>
+                <a href="{{url_for('song', sid = song.song_id)}}"">{{song.song_title}}</a>
+            </li>
             {% endfor %}
         </ul>
+    </div>
+
+    <div>
+        <p>Edit this playlist:</p>
+
+        <form method="POST" action="/playlist/{{playlistInfo.playlist_id}}">
+            <table>
+              <tr>
+                <td><label for="playlist-name">Playlist Name</label></td>
+                <td><input id="playlist-name" name='playlist-name' value="{{playlistInfo.playlist_name}}"></td> 
+              </tr>
+              <tr>
+                <td><label for="playlist-genre">Genre</label></td>
+                <td><input id="playlist-genre" name='playlist-genre' value="{{playlistInfo.playlist_genre}}"></td> 
+              </tr>
+            </table>
+            <input class = 'button' type="submit" name="submit" value="update">
+            <input class = 'button' type="submit" name="submit" value="delete">
+          </form>
+    </p>
     </div>
 
 {% endblock %}

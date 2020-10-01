@@ -47,15 +47,56 @@ def playlistPage(pid):
     # TODO: implement search functionality to search for playlists
     playlistInfo = playlist.get_playlist_info(conn,pid)
     nestedSongs = playlist.get_playlist_songs(conn,pid)
-    songs = [elt[0] for elt in nestedSongs]
     if playlistInfo == None: # playlist not found
         return render_template('notFound.html',
             type='No playlist', page_title="Playlist Not Found")
     else: # playlist found
-        return render_template('playlist.html', 
+        if (request.method == "GET"):
+            return render_template('playlist.html', 
                             playlistInfo=playlistInfo, 
-                            songs=songs, 
+                            songs=nestedSongs, 
                             page_title=playlistInfo['playlist_name'])
+        else: #update playlist
+            submitType = request.form.get('submit')
+
+            if (submitType == 'update'): 
+                newName = request.form.get('playlist-name')
+                newGenre = request.form.get('playlist-genre')
+
+                oldName = playlistInfo["playlist_name"]
+                pUser = playlistInfo["user_name"]
+                uid = playlistInfo["created_by"]
+                pid = playlistInfo["playlist_id"]
+
+                #Check if we are changing the name of the playlsit
+                if oldName == newName:
+                    playlist.updatePlaylist(conn,pid,newName,newGenre)
+                    playlistInfo = playlist.get_playlist_info(conn,pid)
+                    flash(newName + '  was updated successfully')
+                        
+                    return render_template('playlist.html', 
+                                playlistInfo=playlistInfo, 
+                                songs=nestedSongs, 
+                                page_title=playlistInfo['playlist_name'])
+                else:
+                    #There cannot be multiple playlists with the same name
+                    if playlist.check_unique_playlist_name(conn, newName, uid):
+                        playlist.updatePlaylist(conn,pid,newName,newGenre)
+                        playlistInfo = playlist.get_playlist_info(conn,pid)
+                        flash(newName + '  was updated successfully')
+                        
+                        return render_template('playlist.html', 
+                                playlistInfo=playlistInfo, 
+                                songs=nestedSongs, 
+                                page_title=playlistInfo['playlist_name'])
+                    else:
+                        flash('Error: A playlist with this name already exists')
+
+                        return render_template('playlist.html', 
+                                playlistInfo=playlistInfo, 
+                                songs=nestedSongs, 
+                                page_title=playlistInfo['playlist_name'])
+
 
 @app.route('/user/<user_id>')
 def user(user_id):

@@ -10,7 +10,7 @@ genre, and creator of that playlist
 '''
 def get_playlist_info(conn,pid):
     curs = dbi.dict_cursor(conn)
-    sql = '''select playlist_name, playlist_genre, user_name
+    sql = '''select playlist_name, playlist_genre, user_name, playlist_id, created_by
             from coda_playlist 
             inner join coda_user on 
                 (coda_user.user_id = coda_playlist.created_by)
@@ -23,10 +23,35 @@ Given a connection object and playlist id, gets the songs
 in that playlist
 '''
 def get_playlist_songs(conn,pid):
-    curs = dbi.cursor(conn)
-    sql = '''select song_title 
+    curs = dbi.dict_cursor(conn)
+    sql = '''select song_title, song_id 
             from coda_song 
                 inner join coda_playlist_songs using (song_id)
             where playlist_id = %s'''
     curs.execute(sql,[pid])
     return curs.fetchall()
+
+'''
+Given a connection object, a playlist name, and a user id,
+check if the user already has a playlist with that name
+'''
+def check_unique_playlist_name(conn,pName, uid):
+    curs = dbi.cursor(conn)
+    sql = '''select count(playlist_name)
+            from coda_playlist 
+            where playlist_name = %s and created_by = %s'''
+    curs.execute(sql,[pName,uid])
+    res = curs.fetchall()
+    if res[0][0] == 0:
+        return True
+    return False
+
+
+def updatePlaylist(conn,pid,newName,newGenre):
+    curs = dbi.cursor(conn)
+    sql = '''update coda_playlist
+            set playlist_name = %s, playlist_genre = %s
+            where playlist_id = %s'''
+    curs.execute(sql,[newName,newGenre,pid])
+    conn.commit()
+
