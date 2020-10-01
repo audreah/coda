@@ -1,4 +1,5 @@
 '''
+Authors: Danya Gao, Audrea Huang
 Gets information about playlists from the coda_db database
 '''
 
@@ -17,6 +18,19 @@ def get_playlist_info(conn,pid):
             where playlist_id = %s'''
     curs.execute(sql,[pid])
     return curs.fetchone()
+
+'''                                                                             
+Returns the playlists whose names are similar to the user's query
+if the query does not return one direct result.
+:param conn: connection to database
+:param query: playlist name that the user specifies     
+'''
+def get_similar_playlists(conn,query):
+    curs = dbi.dict_cursor(conn)                                              
+    userInput = '%' + query + '%'
+    curs.execute('''select playlist_id, playlist_name from coda_playlist         
+        where playlist_name COLLATE UTF8_GENERAL_CI LIKE %s''', [userInput])
+    return curs.fetchall()
 
 '''
 Given a connection object and playlist id, gets the songs 
