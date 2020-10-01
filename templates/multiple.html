@@ -21,6 +21,14 @@ multiple matches.  -->
             <li><a href="{{ url_for('song', sid=song.song_id) }}">{{song.song_title}}</a></li>
         {% endfor %}
     </ul>
+
+<h3> Playlists matching {{name}} </h3>
+<ul>
+    {% for playlist in playlists %}
+        <li><a href="{{ url_for('playlistPage', pid=playlist.playlist_id) }}">
+    {{playlist.playlist_name}}</a></li>
+    {% endfor %}
+</ul>
     
 <h3> Users matching {{name}} </h3>
     <ul>

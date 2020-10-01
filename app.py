@@ -1,3 +1,8 @@
+'''
+Authors: Danya Gao, Audrea Huang, Liz Huang
+File description: main driver application
+'''
+
 from flask import (Flask, render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
@@ -152,33 +157,45 @@ def song(sid):
 
 '''
 Renders the template for the user's search.
-:returns: the item's (album, song, or user) individual page if there is
-          exactly one match
-          otherwise, lists out all matches with links to their individual pages.
+:returns: the individual page for an item ((album, song, playlist, or user)
+        if there is exactly one match
+        otherwise, lists out all matches with links to their individual pages.
 '''
 @app.route('/query/', methods=['GET'])
 def query():
     conn = dbi.connect()
     query = request.args['searchbar'] # query text
-    albumMatches = albumPage.get_similar_albums(conn,query)
-    songMatches = songPage.get_similar_songs(conn,query)
+    albumMatches = albumPage.get_similar_albums(conn, query)
+    songMatches = songPage.get_similar_songs(conn, query)
     userMatches = userpage.search_user(conn, query)
+    playlistMatches = playlist.get_similar_playlists(conn, query)
 
     # no matches
-    if not albumMatches and not songMatches and not userMatches:
+    if (not albumMatches and not songMatches 
+        and not userMatches and not playlistMatches):
         return render_template('notFound.html', type='Nothing',
         page_title="No matches")
 
     # one album matches
-    elif len(albumMatches) == 1 and not songMatches and not userMatches:
+    elif (len(albumMatches) == 1 and not songMatches 
+        and not userMatches and not playlistMatches):
         return redirect(url_for('album', aid=albumMatches[0]['album_id']))
 
     # one song matches
-    elif len(songMatches) == 1 and not userMatches:
+    elif (len(songMatches) == 1 and not albumMatches
+        and not userMatches and not playlistMatches):
         return redirect(url_for('song', sid=songMatches[0]['song_id']))
-    
-    elif userMatches and not songMatches and not albumMatches:
-        return render_template("search.html", users = users)
+
+    # one user matches
+    elif (userMatches and not songMatches and not albumMatches 
+        and not playlistMatches):
+        return render_template("search.html", users = userMatches)
+
+    # one playlist matches
+    elif (len(playlistMatches) == 1 and not songMatches 
+        and not albumMatches and not playlistMatches):
+        return render_template("playlist.html", 
+            playlistInfo=playlistMatches)
 
     # multiple matches
     else:
@@ -188,19 +205,27 @@ def query():
             albumID = albumDict['album_id']
             albums.append(albumPage.get_album(conn, albumID))  
 
+        # extract information for each matching song
         songs = []
         for songDict in songMatches:
             songID = songDict['song_id']
             songs.append(songPage.get_song(conn, songID))
 
+        # extract information for each matching user
         users = []
         for userDict in userMatches:
             userID = userDict['user_id']
             users.append(userpage.get_user_id(conn, userID))
 
+        # extract information for each matching playlist
+        playlists = []
+        for playlistDict in playlistMatches:
+            playlistID = playlistDict['playlist_id']
+            playlists.append(playlist.get_playlist_info(conn, playlistID))
+
         return render_template('multiple.html', 
             albums=albums, songs=songs, users=users,
-            name = query,
+            playlists=playlists, name = query,
             page_title="Mutliple Results Found")
 
 
