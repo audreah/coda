@@ -30,86 +30,84 @@ app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
 @app.route('/')
 def index():
-    return render_template('main.html',title='Hello')
-
-
-@app.route('/search/')
-def search():
-    conn  = dbi.connect()
-    value = request.args.get("searchbar")
-    users = userpage.search_user(conn, value)
-    print(users)
-    if users:
-        return render_template("search.html", users = users)
+    conn = dbi.connect()
+    genres = songPage.get_genres(conn)
+    return render_template('main.html',title='Home',genres=genres)
 
 '''
 Displays name, genre, and creator for a playlist, along with all the
-songs that have been added to the playlist
+songs that have been added to the playlist.
 '''
 @app.route('/playlist/<int:pid>', methods=["GET", "POST"]) 
 def playlistPage(pid):
     conn = dbi.connect()
-    # TODO: implement search functionality to search for playlists
     playlistInfo = playlist.get_playlist_info(conn,pid)
     nestedSongs = playlist.get_playlist_songs(conn,pid)
+    
     if playlistInfo == None: # playlist not found
         return render_template('notFound.html',
             type='No playlist', page_title="Playlist Not Found")
-    else: # playlist found
-        if (request.method == "GET"):
-            return render_template('playlist.html', 
+    
+    # playlist found
+    if (request.method == "GET"):
+        return render_template('playlist.html', 
+                        playlistInfo=playlistInfo, 
+                        songs=nestedSongs, 
+                        page_title=playlistInfo['playlist_name'])
+    else: #update playlist
+        submitType = request.form.get('submit')
+
+        if (submitType == 'update'): 
+            newName = request.form.get('playlist-name')
+            newGenre = request.form.get('playlist-genre')
+
+            oldName = playlistInfo["playlist_name"]
+            pUser = playlistInfo["user_name"]
+            uid = playlistInfo["created_by"]
+            pid = playlistInfo["playlist_id"]
+
+            #Check if we are changing the name of the playlsit
+            if oldName == newName:
+                playlist.updatePlaylist(conn,pid,newName,newGenre)
+                playlistInfo = playlist.get_playlist_info(conn,pid)
+                flash(newName + '  was updated successfully')
+                    
+                return render_template('playlist.html', 
                             playlistInfo=playlistInfo, 
                             songs=nestedSongs, 
                             page_title=playlistInfo['playlist_name'])
-        else: #update playlist
-            submitType = request.form.get('submit')
-
-            if (submitType == 'update'): 
-                newName = request.form.get('playlist-name')
-                newGenre = request.form.get('playlist-genre')
-
-                oldName = playlistInfo["playlist_name"]
-                pUser = playlistInfo["user_name"]
-                uid = playlistInfo["created_by"]
-                pid = playlistInfo["playlist_id"]
-
-                #Check if we are changing the name of the playlsit
-                if oldName == newName:
+            else:
+                #There cannot be multiple playlists with the same name
+                if playlist.check_unique_playlist_name(conn, newName, uid):
                     playlist.updatePlaylist(conn,pid,newName,newGenre)
                     playlistInfo = playlist.get_playlist_info(conn,pid)
                     flash(newName + '  was updated successfully')
-                        
+                    
                     return render_template('playlist.html', 
-                                playlistInfo=playlistInfo, 
-                                songs=nestedSongs, 
-                                page_title=playlistInfo['playlist_name'])
+                            playlistInfo=playlistInfo, 
+                            songs=nestedSongs, 
+                            page_title=playlistInfo['playlist_name'])
                 else:
-                    #There cannot be multiple playlists with the same name
-                    if playlist.check_unique_playlist_name(conn, newName, uid):
-                        playlist.updatePlaylist(conn,pid,newName,newGenre)
-                        playlistInfo = playlist.get_playlist_info(conn,pid)
-                        flash(newName + '  was updated successfully')
-                        
-                        return render_template('playlist.html', 
-                                playlistInfo=playlistInfo, 
-                                songs=nestedSongs, 
-                                page_title=playlistInfo['playlist_name'])
-                    else:
-                        flash('Error: A playlist with this name already exists')
+                    flash('Error: A playlist with this name already exists')
 
-                        return render_template('playlist.html', 
-                                playlistInfo=playlistInfo, 
-                                songs=nestedSongs, 
-                                page_title=playlistInfo['playlist_name'])
+                    return render_template('playlist.html', 
+                            playlistInfo=playlistInfo, 
+                            songs=nestedSongs, 
+                            page_title=playlistInfo['playlist_name'])
 
-
+'''
+Displays a user's name, friends, and playlists.
+:param user_id: unique id for a user
+:returns: the user's profile page
+'''
 @app.route('/user/<user_id>')
 def user(user_id):
     conn = dbi.connect()
     user = userpage.get_user_id(conn, user_id)
     friendsList = userpage.get_friends(conn, user_id)
     playlists = userpage.get_user_playlists(conn, user_id)
-    return (render_template("user.html", user= user, friendsList = friendsList, playlists = playlists))
+    return (render_template("user.html", user= user, 
+        friendsList = friendsList, playlists = playlists))
 
 ''' 
 This is the route for album lookups. It renders a template 
