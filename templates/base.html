@@ -20,13 +20,15 @@
 {% endif %}
 {% endwith %}
             
-
-{% block nav %}
-<form class="search" method="GET" action= "/query/">
-  <p><label>search: <input type="text" name="searchbar"></label>
-  <input type="submit" value="search"></p>
-</form>
-{% endblock %}
+ <div class="topnav">
+    <ul>
+      <li><a href = "{{ url_for('index') }}">Explore Page</a></li>
+      <form class="search" method="GET" action= "/query/">
+        <p><label>Search: <input type="text" name="searchbar"></label>
+        <input type="submit" value="search"></p>
+      </form>
+    </ul>
+  </div>
 
 {% block main_content %}
 <h1>Welcome!</h1>
