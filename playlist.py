@@ -77,10 +77,10 @@ Gets all the playlists of a given genre to organize the explore page.
 '''
 def playlists_by_genre(conn, genre):
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select playlist_id from coda_playlist
+    curs.execute('''select playlist_id, playlist_name from coda_playlist
         where playlist_genre = %s''', [genre])
     genreDictList = curs.fetchall()
-    return [genreDict['playlist_id'] for genreDict in genreDictList]
+    return genreDictList
 
 '''
 (temporary) Get all the playlists in the db so we can add songs to them.

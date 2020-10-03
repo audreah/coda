@@ -6,7 +6,7 @@
     <title>{{ page_title }}</title>
     <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
-    <!-- {% block head_stuff %} {% endblock %} -->
+    {% block head_style %} {% endblock %}
 </head>
 <body>
 
@@ -22,7 +22,7 @@
             
  <div class="topnav">
     <ul>
-      <li><a href = "{{ url_for('index') }}">Explore Page</a></li>
+      <li><a href = "{{ url_for('index') }}">Explore</a></li>
       <form class="search" method="GET" action= "/query/">
         <p><label>Search: <input type="text" name="searchbar"></label>
         <input type="submit" value="search"></p>

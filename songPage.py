@@ -55,14 +55,17 @@ def get_genres(conn):
 Gets all the songs of a given genre to organize the explore page.
 :param genre: one genre of interest
 :param conn: connection to database
-:returns: all the song ids grouped by genre
+:returns: all the song ids, titles, artists, and albums grouped by genre
 '''
 def songs_by_genre(conn, genre):
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select song_id from coda_song 
-        where genre = %s''', [genre])
+    curs.execute('''select song_id, song_title, 
+        artist_name, album_title from coda_song
+        join coda_album using(album_id)
+        join coda_artist using(artist_id)
+        where coda_song.genre = %s''', [genre])
     genreDictList = curs.fetchall()
-    return [genreDict['song_id'] for genreDict in genreDictList]
+    return genreDictList
 
 # ==========================================================
 # This starts the ball rolling, *if* the file is run as a

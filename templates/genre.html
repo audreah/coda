@@ -1,9 +1,45 @@
 {% extends "base.html" %}
 
-{% block main_content %}
-<h1>Welcome to coda</h1>
-<h3 style='color:rgb(100, 132, 154)'>{{ genre }}</h3>
+{% block head_style %}
+<style>
+    .genreType{
+        color:rgb(100, 132, 154);
+    }
 
+    .genreSongList{
+        list-style-type: none;
+        padding: 0.5em; 
+        margin-left: 0.5em; 
+        margin-top: 0;
+    }
+
+    .genreSongListElms{
+        padding: 0 0 0.7em;
+    }
+
+    th {
+        text-align: left;
+        font-weight: normal;
+        color: rgb(143, 147, 143);
+    }
+
+    tr {
+        border-collapse:collapse;
+        border-bottom: 1px solid rgb(74, 75, 74, 50);
+    }
+
+    td {
+        color: rgb(224, 226, 224);
+        padding-top: 0.7em;
+        padding-bottom: 0.7em;
+    }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<h1 style='color:white'>{{ genre }}</h1>
+
+<h3 class='genreType'> Playlists </h3>
 <table style='width:50%'>
 {% for i in range(playlists | length) %}
     <!-- start a new row for every three elements -->
@@ -11,7 +47,12 @@
         <tr>
     {% endif %}
 
-    <td><span class='playlist' style='color:rgb(194, 174, 144)'>{{ playlists[i] }} </span></td>
+    <td>
+        <a href="{{ url_for('playlistPage', pid=playlists[i].playlist_id) }}"
+        style='text-decoration:none'>
+            {{ playlists[i]['playlist_name'] }} 
+        </a>
+    </td>
 
     <!-- end the row -->
     {% if i % 3 == 2 %}
@@ -20,6 +61,31 @@
    
 
 {% endfor %}
+</table>
+<br><br>
+
+<h3 class="genreType"> Songs </h3>
+<table class="songTable" style="width:100%; border-collapse: collapse;">
+    <tr>
+        <th>Title</th>
+        <th>Artist</th>
+        <th>Album</th>
+      </tr>
+    {% for song in songs %}
+        <tr>
+        <td>
+            <a href="{{url_for('song', sid = song.song_id)}}"
+                style='text-decoration:none'>
+                
+                    {{ song['song_title'] }}
+            </a>
+        </td>
+        <td>{{ song['artist_name'] }}</td>
+        <td>{{ song['album_title'] }}</td>
+
+        </tr>
+    {% endfor %}
+
 </table>
 
 {% endblock %}
