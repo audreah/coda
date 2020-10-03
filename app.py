@@ -66,7 +66,7 @@ def playlistPage(pid):
             uid = playlistInfo["created_by"]
             pid = playlistInfo["playlist_id"]
 
-            #Check if we are changing the name of the playlsit
+            # Check if we are changing the name of the playlsit
             if oldName == newName:
                 playlist.updatePlaylist(conn,pid,newName,newGenre)
                 playlistInfo = playlist.get_playlist_info(conn,pid)
@@ -77,7 +77,7 @@ def playlistPage(pid):
                             songs=nestedSongs, 
                             page_title=playlistInfo['playlist_name'])
             else:
-                #There cannot be multiple playlists with the same name
+                # There cannot be multiple playlists with the same name
                 if playlist.check_unique_playlist_name(conn, newName, uid):
                     playlist.updatePlaylist(conn,pid,newName,newGenre)
                     playlistInfo = playlist.get_playlist_info(conn,pid)
@@ -126,15 +126,16 @@ def album(aid):
     if albumInfo == None: # album not found
         return render_template('notFound.html',
             type='No album', page_title="Album Not Found")
-    else: # album found
-        return render_template('album.html', 
-            albumDescription=albumInfo,
-            songs=songs,
-            page_title='Album | ' + albumInfo['album_title'])
+    
+    # album found
+    return render_template('album.html', 
+        albumDescription=albumInfo,
+        songs=songs,
+        page_title='Album | ' + albumInfo['album_title'])
 
 ''' 
-This is the route for song lookups. It renders a template 
-with the artist's name and the title of the album on which album it appears.
+Returns information about the artist's name and the 
+title of the album on which it appears.
 
 :param sid: a unique song id from the coda_song table
 :returns: not found page if song does not exist in the database
@@ -144,14 +145,38 @@ with the artist's name and the title of the album on which album it appears.
 def song(sid):
     conn = dbi.connect()
     song_info = songPage.get_song(conn, sid)
+    playlists = playlist.get_playlists(conn)
 
     if song_info == None: # song not found
         return render_template('notFound.html',
             type='No song', page_title="Song Not Found")
-    else: # song found
-        return render_template('song.html', 
-            song=song_info,
-            page_title='Song | ' + song_info['song_title'])
+    
+    # song found
+    return render_template('song.html', 
+        song=song_info,
+        page_title='Song | ' + song_info['song_title'],
+        playlists=playlists)
+
+''' 
+Returns a template displaying playlists and songs that fit
+under the given genre.
+
+:param genreName: playlist or song genre
+:returns: not found page if genre does not exist in the database
+          all the playlists and songs with that genre
+'''
+@app.route('/genre/<string:genreName>')
+def genre(genreName):
+    conn = dbi.connect()
+    playlists = playlist.playlists_by_genre(conn, genreName)
+    songs = songPage.songs_by_genre(conn, genreName)
+
+    if playlists == None and songs == None: # genre not found
+        return render_template('notFound.html',
+            type='No genre', page_title="Genre Not Found")
+    
+    return render_template('genre.html',
+        page_title=genreName, genre=genreName, playlists=playlists)
 
 '''
 Renders the template for the user's search.

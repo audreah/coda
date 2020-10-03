@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>Welcome to coda</h1>
+<h3 style='color:rgb(100, 132, 154)'>{{ genre }}</h3>
+
+<table style='width:50%'>
+{% for i in range(playlists | length) %}
+    <!-- start a new row for every three elements -->
+    {% if i % 3 == 0 %}
+        <tr>
+    {% endif %}
+
+    <td><span class='playlist' style='color:rgb(194, 174, 144)'>{{ playlists[i] }} </span></td>
+
+    <!-- end the row -->
+    {% if i % 3 == 2 %}
+        </tr>
+    {% endif %}
+   
+
+{% endfor %}
+</table>
+
+{% endblock %}
