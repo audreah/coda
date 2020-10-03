@@ -12,7 +12,7 @@
     {% endif %}
 
     <td>
-        <a href="{{url_for('genre', genreName = genres[i])}}"
+        <a href="{{url_for('genre', genreName = genres[i].lower())}}"
             style='text-decoration:none'>
             <span class='genre' style='color:rgb(194, 174, 144)'>
                 {{ genres[i] }}
