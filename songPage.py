@@ -17,7 +17,7 @@ Get information about a song to display on the song's page.
 '''
 def get_song(conn, sid):
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select song_title, genre, user_name,
+    curs.execute('''select song_id, song_title, genre, user_name,
         artist_name, release_year, album_title from coda_song
         join coda_album using(album_id)
         join coda_artist using(artist_id)
@@ -40,13 +40,14 @@ def get_similar_songs(conn, text):
     return curs.fetchall()
 
 '''
-Gets all the genres.
+Gets all the genres (for both songs and playlists).
 :param conn: connection to database
 :returns: all of the genres in the database
 '''
 def get_genres(conn):
     curs = dbi.dict_cursor(conn)
-    curs.execute('select distinct genre from coda_song')
+    curs.execute('''select distinct genre from coda_song union (
+            select distinct playlist_genre from coda_playlist)''')
     genreDictList = curs.fetchall()
     return [genreDict['genre'] for genreDict in genreDictList]
 

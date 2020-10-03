@@ -69,3 +69,27 @@ def updatePlaylist(conn,pid,newName,newGenre):
     curs.execute(sql,[newName,newGenre,pid])
     conn.commit()
 
+'''
+Gets all the playlists of a given genre to organize the explore page.
+:param genre: one genre of interest
+:param conn: connection to database
+:returns: all the song ids grouped by genre
+'''
+def playlists_by_genre(conn, genre):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select playlist_id from coda_playlist
+        where playlist_genre = %s''', [genre])
+    genreDictList = curs.fetchall()
+    return [genreDict['playlist_id'] for genreDict in genreDictList]
+
+'''
+(temporary) Get all the playlists in the db so we can add songs to them.
+
+:param conn: connection to db
+:returns: the names and ids of all playlists
+'''
+def get_playlists(conn):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('select playlist_id, playlist_name from coda_playlist')
+    playlistDictList = curs.fetchall()
+    return playlistDictList

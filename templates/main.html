@@ -1,17 +1,24 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-<h1>Welcome to coda</h1>
-<h3 style='color:white'>Explore content</h3>
+<h1>welcome to coda</h1>
+<h3 style='color:rgb(100, 132, 154)'>Explore content</h3>
 
-<table style='width:50%'>
+<table style='width:75%'>
 {% for i in range(genres | length) %}
     <!-- start a new row for every three elements -->
     {% if i % 3 == 0 %}
         <tr>
     {% endif %}
 
-    <td><span class='genre'>{{ genres[i] }} </span></td>
+    <td>
+        <a href="{{url_for('genre', genreName = genres[i])}}"
+            style='text-decoration:none'>
+            <span class='genre' style='color:rgb(194, 174, 144)'>
+                {{ genres[i] }}
+            </span>
+        </a>
+    </td>
 
     <!-- end the row -->
     {% if i % 3 == 2 %}
