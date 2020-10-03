@@ -55,15 +55,16 @@ def get_genres(conn):
 Gets all the songs of a given genre to organize the explore page.
 :param genre: one genre of interest
 :param conn: connection to database
-:returns: all the song ids, titles, artists, and albums grouped by genre
+:returns: all the song ids, titles, artists, and albums for that genre
 '''
 def songs_by_genre(conn, genre):
     curs = dbi.dict_cursor(conn)
+    genre = '%' + genre + '%'
     curs.execute('''select song_id, song_title, 
         artist_name, album_title from coda_song
         join coda_album using(album_id)
         join coda_artist using(artist_id)
-        where coda_song.genre = %s''', [genre])
+        where coda_song.genre like %s''', [genre])
     genreDictList = curs.fetchall()
     return genreDictList
 
@@ -80,6 +81,6 @@ if __name__ == '__main__':
     # genres = get_genres(conn)
     # print(genres)
 
-    countrySongs = songs_by_genre(conn, 'Country')
+    countrySongs = songs_by_genre(conn, 'Christmas')
     print(countrySongs)
     

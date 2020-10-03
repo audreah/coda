@@ -16,7 +16,7 @@ import cs304dbi as dbi
 
 # import cs304dbi_sqlite3 as dbi
 
-import random, playlist, albumPage, songPage, userpage
+import random, playlist, albumPage, songPage, userpage, re
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -31,8 +31,13 @@ app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 @app.route('/')
 def index():
     conn = dbi.connect()
-    genres = songPage.get_genres(conn)
-    return render_template('main.html',title='Home',genres=genres)
+    # might have multiple genres for one song
+    genresDB = songPage.get_genres(conn) 
+    genres = []
+    for genre in genresDB:
+        # separate genres and strip any leading/trailing whitespace
+        genres += [oneGenre.strip().lower() for oneGenre in re.split('\||,', genre)]
+    return render_template('main.html',title='Home',genres=sorted(genres))
 
 '''
 Displays name, genre, and creator for a playlist, along with all the
