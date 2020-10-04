@@ -19,6 +19,16 @@ def get_playlist_info(conn,pid):
     curs.execute(sql,[pid])
     return curs.fetchone()
 
+# TODO: modify to only get the current user's playlists
+'''
+Given a connection object, return all playlists in the database
+'''
+def get_all_playlists(conn):
+    curs = dbi.dict_cursor(conn)
+    sql = '''select * from coda_playlist'''
+    curs.execute(sql)
+    return curs.fetchall()
+
 '''                                                                             
 Returns the playlists whose names are similar to the user's query
 if the query does not return one direct result.
@@ -60,7 +70,10 @@ def check_unique_playlist_name(conn,pName, uid):
         return True
     return False
 
-
+'''
+Given a connection object, a playlist id, a new name,
+and a new genre, update the playlist
+'''
 def updatePlaylist(conn,pid,newName,newGenre):
     curs = dbi.cursor(conn)
     sql = '''update coda_playlist
@@ -69,3 +82,37 @@ def updatePlaylist(conn,pid,newName,newGenre):
     curs.execute(sql,[newName,newGenre,pid])
     conn.commit()
 
+'''
+Given a connection object, a playlist name, genre,
+and a user id, create a playlist
+'''
+def createPlaylist(conn,name,genre,user):
+    curs = dbi.cursor(conn)
+    sql = '''insert into coda_playlist
+                        (playlist_name,playlist_genre,created_by)
+             values (%s,%s,%s)'''
+    curs.execute(sql,[name,genre,user])
+    conn.commit()
+
+'''
+Given a connection object and a playlist id, 
+delete the playlist
+'''
+def deletePlaylist(conn,pid):
+    curs = dbi.cursor(conn)
+    sql = '''delete from coda_playlist
+                    where playlist_id = %s'''
+    curs.execute(sql,[pid])
+    conn.commit()
+
+''' 
+Given a connection object, a song id, and a playlist id, 
+add that song to the playlist
+'''
+def addSongToPlaylist(conn,pid,sid):
+    curs = dbi.cursor(conn)
+    sql = '''insert into coda_playlist_songs(playlist_id,song_id)
+            values (%s,%s)'''
+    curs.execute(sql,[pid,sid])
+    conn.commit()
+    

@@ -54,16 +54,16 @@ def playlistPage(pid):
                         playlistInfo=playlistInfo, 
                         songs=nestedSongs, 
                         page_title=playlistInfo['playlist_name'])
-    else: #update playlist
+    else: #POST request
         submitType = request.form.get('submit')
+        oldName = playlistInfo["playlist_name"]
+        uid = playlistInfo["created_by"]
 
-        if (submitType == 'update'): 
+        if (submitType == 'update'): #update playlist
             newName = request.form.get('playlist-name')
             newGenre = request.form.get('playlist-genre')
 
-            oldName = playlistInfo["playlist_name"]
             pUser = playlistInfo["user_name"]
-            uid = playlistInfo["created_by"]
             pid = playlistInfo["playlist_id"]
 
             #Check if we are changing the name of the playlsit
@@ -94,13 +94,18 @@ def playlistPage(pid):
                             playlistInfo=playlistInfo, 
                             songs=nestedSongs, 
                             page_title=playlistInfo['playlist_name'])
+                    
+        else: #delete playlist
+            playlist.deletePlaylist(conn,pid)
+            flash(oldName + ' deleted successfully')
+            return redirect(url_for('user',user_id = uid))
 
 '''
 Displays a user's name, friends, and playlists.
 :param user_id: unique id for a user
 :returns: the user's profile page
 '''
-@app.route('/user/<user_id>')
+@app.route('/user/<int:user_id>')
 def user(user_id):
     conn = dbi.connect()
     user = userpage.get_user_id(conn, user_id)
@@ -140,7 +145,7 @@ with the artist's name and the title of the album on which album it appears.
 :returns: not found page if song does not exist in the database
           the desired page for that song otherwise
 '''
-@app.route('/song/<int:sid>')
+@app.route('/song/<int:sid>', methods = ['GET','POST'])
 def song(sid):
     conn = dbi.connect()
     song_info = songPage.get_song(conn, sid)
@@ -149,9 +154,38 @@ def song(sid):
         return render_template('notFound.html',
             type='No song', page_title="Song Not Found")
     else: # song found
-        return render_template('song.html', 
-            song=song_info,
-            page_title='Song | ' + song_info['song_title'])
+        if request.method == 'GET': #display playlist info
+            allPlaylists = playlist.get_all_playlists(conn)
+            return render_template('song.html', 
+                song=song_info, sid = sid, playlists = allPlaylists,
+                page_title='Song | ' + song_info['song_title'])
+        else: #add song to playlist
+            pid = request.form.get("playlist-id")
+
+            playlist.addSongToPlaylist(conn,pid,sid)
+            return redirect(url_for('playlistPage', pid = pid))
+
+'''Returns rendered insert template if get method, or if
+post method, creates a playlist and flashes a link to 
+the new playlist'''
+@app.route('/playlist/create', methods = ['GET','POST'])
+def createPlaylist():
+    conn = dbi.connect()
+    if request.method == 'GET':
+        return render_template('createPlaylist.html')
+                                
+    else: #inserting movie action, making sure input is valid
+        pName = request.form.get('playlist-name')
+        pGenre = request.form.get('playlist-genre')
+        pUser = request.form.get('playlist-user') #replace with logged in user once authentication added
+        if playlist.check_unique_playlist_name(conn, pName, pUser): #check if the playlist name already exists
+            playlist.createPlaylist(conn,pName,pGenre,pUser)
+            flash(pName + ' has been created!')
+            return redirect(url_for('createPlaylist'))
+            
+        else: #if playlist name by that user already in database
+            flash("This playlist name already exists in database, try a different name!")
+            return redirect(url_for('createPlaylist'))
 
 '''
 Renders the template for the user's search.

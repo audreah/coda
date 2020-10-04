@@ -18,7 +18,7 @@ Get information about a song to display on the song's page.
 def get_song(conn, sid):
     curs = dbi.dict_cursor(conn)
     curs.execute('''select song_title, genre, user_name,
-        artist_name, release_year, album_title from coda_song
+        artist_name, release_year, album_title, song_id from coda_song
         join coda_album using(album_id)
         join coda_artist using(artist_id)
         join coda_user on coda_user.user_id = coda_song.added_by

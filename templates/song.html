@@ -13,5 +13,17 @@ and who added the song to the database. -->
 <p>Release Year: {{song.release_year}}</p>
 <p>Added by: {{song.user_name}}</p>
 
+<!-- TODO: only display playlists of the current user -->
+<form method="POST" action="{{url_for('song', sid = sid)}}">
+    <p>Add this song to a playlist below:</p> 
+        {% for playlist in playlists %}
+            <li>
+                <button type="submit" name="playlist-id" value="{{playlist.playlist_id}}">
+                {{playlist.playlist_name}}
+                </button>
+            </li>
+        {% endfor %}
+</form>
+
 
 {% endblock %}
