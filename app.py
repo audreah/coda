@@ -16,7 +16,7 @@ import cs304dbi as dbi
 
 # import cs304dbi_sqlite3 as dbi
 
-import random, playlist, albumPage, songPage, userpage, re
+import random, playlist, albumPage, songPage, userpage, re, artistPage
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -118,6 +118,18 @@ def user(user_id):
     playlists = userpage.get_user_playlists(conn, user_id)
     return (render_template("user.html", user= user, 
         friendsList = friendsList, playlists = playlists))
+
+'''
+Displays an artist's page, including their albums and songs.
+:param artist_id: unique id for an artist
+:returns: the artist's profile page
+'''
+@app.route('/artist/<int:artist_id>')
+def artist(artist_id):
+    conn = dbi.connect()
+    artist = artistPage.get_artist(conn, artist_id)
+    albumList = artistPage.get_artist_albums(conn, artist_id)
+    return (render_template("artist.html", artist = artist, albumList = albumList))
 
 ''' 
 This is the route for album lookups. It renders a template 

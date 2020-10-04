@@ -22,10 +22,6 @@
     {% endif %}
 </ol>
 
-<br>
-<h2>Playlists:</h2>
-<p><a href = "{{url_for('createPlaylist')}}"">Click here to create a new playlist!</a></p>
-
 </div>
 
 <div id="Playlists" class="tabcontent">
@@ -42,6 +38,8 @@
     {% endif %}
 
 </ol> 
+    <br>
+    <button type="button" class = "button" onclick="window.location.href= '{{ url_for('createPlaylist') }}';">Create New Playlist</button>
 </div>
 <script>
     function displayTab(evt, tab) {
