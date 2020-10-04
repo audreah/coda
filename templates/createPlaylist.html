@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+
+<h1>Create a Playlist</h1>
+
+<form method="POST" action="{{url_for('createPlaylist')}}">
+
+    <fieldset>
+    <legend>New Playlist Info</legend>
+    <table>
+    <tr><td><label for="playlist-name">Playlist Name (Required):</label></td>
+        <td><input type="text" name="playlist-name" id="playlist-name" required></td></tr>
+    <tr><td><label for="playlist-genre">Genre:</label></td>
+        <td><input type="playlist-genre" name="playlist-genre" id="playlist-genre"></td></tr>
+    <!-- created by will be removed once we have authentication -->
+    <tr><td><label for="playlist-user">Created by (id):</label></td>
+        <td><input type="playlist-user" name="playlist-user" id="playlist-user"></td></tr>
+    </table>
+    </fieldset>
+
+    <br> <input class = 'button' type='submit' value='create'>
+
+</form>
+
+{% endblock %}
