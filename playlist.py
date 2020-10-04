@@ -116,7 +116,8 @@ def addSongToPlaylist(conn,pid,sid):
             values (%s,%s)'''
     curs.execute(sql,[pid,sid])
     conn.commit()
-    
+
+'''    
 Gets all the playlists of a given genre to organize the explore page.
 :param genre: one genre of interest
 :param conn: connection to database
