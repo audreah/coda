@@ -36,7 +36,8 @@ def index():
     genres = []
     for genre in genresDB:
         # separate genres and strip any leading/trailing whitespace
-        genres += [oneGenre.strip().lower() for oneGenre in re.split('\||,', genre)]
+        genres += [oneGenre.strip().lower() for oneGenre in re.split('\||,', genre)
+            if oneGenre.strip().lower() not in genres]
     return render_template('main.html',title='Home',genres=sorted(genres))
 
 '''
@@ -129,7 +130,8 @@ def artist(artist_id):
     conn = dbi.connect()
     artist = artistPage.get_artist(conn, artist_id)
     albumList = artistPage.get_artist_albums(conn, artist_id)
-    return (render_template("artist.html", artist = artist, albumList = albumList))
+    return (render_template("artist.html", artist = artist, 
+        albumList = albumList))
 
 ''' 
 This is the route for album lookups. It renders a template 
@@ -197,14 +199,19 @@ def createPlaylist():
     else: #inserting movie action, making sure input is valid
         pName = request.form.get('playlist-name')
         pGenre = request.form.get('playlist-genre')
-        pUser = request.form.get('playlist-user') #replace with logged in user once authentication added
-        if playlist.check_unique_playlist_name(conn, pName, pUser): #check if the playlist name already exists
+
+        #replace with logged in user once authentication added
+        pUser = request.form.get('playlist-user') 
+
+        #check if the playlist name already exists
+        if playlist.check_unique_playlist_name(conn, pName, pUser):
             playlist.createPlaylist(conn,pName,pGenre,pUser)
             flash(pName + ' has been created!')
             return redirect(url_for('createPlaylist'))
             
         else: #if playlist name by that user already in database
-            flash("This playlist name already exists in database, try a different name!")
+            flash('''This playlist name already exists in database, 
+                try a different name!''')
             return redirect(url_for('createPlaylist'))
 
 ''' 
@@ -231,9 +238,9 @@ def genre(genreName):
 
 '''
 Renders the template for the user's search.
-:returns: the individual page for an item ((album, song, playlist, or user)
-        if there is exactly one match
-        otherwise, lists out all matches with links to their individual pages.
+:returns: the individual page for an item (album, song, playlist, 
+    user, or artist) if there is exactly one match
+    otherwise, lists out all matches with links to their individual pages.
 '''
 @app.route('/query/', methods=['GET'])
 def query():
@@ -243,33 +250,42 @@ def query():
     songMatches = songPage.get_similar_songs(conn, query)
     userMatches = userpage.search_user(conn, query)
     playlistMatches = playlist.get_similar_playlists(conn, query)
+    artistMatches = artistPage.search_artist(conn, query)
 
     # no matches
-    if (not albumMatches and not songMatches 
+    if (not albumMatches and not songMatches and not artistMatches
         and not userMatches and not playlistMatches):
         return render_template('notFound.html', type='Nothing',
         page_title="No matches")
 
     # one album matches
-    elif (len(albumMatches) == 1 and not songMatches 
+    elif (len(albumMatches) == 1 and not songMatches and not artistMatches
         and not userMatches and not playlistMatches):
         return redirect(url_for('album', aid=albumMatches[0]['album_id']))
 
     # one song matches
-    elif (len(songMatches) == 1 and not albumMatches
+    elif (len(songMatches) == 1 and not albumMatches and not artistMatches
         and not userMatches and not playlistMatches):
         return redirect(url_for('song', sid=songMatches[0]['song_id']))
 
     # one user matches
-    elif (userMatches and not songMatches and not albumMatches 
-        and not playlistMatches):
+    elif (len(userMatches) == 1 and not songMatches and not albumMatches 
+        and not playlistMatches and not artistMatches):
         return render_template("search.html", users = userMatches)
 
     # one playlist matches
-    elif (len(playlistMatches) == 1 and not songMatches 
+    elif (len(playlistMatches) == 1 and not songMatches and not artistMatches
         and not albumMatches and not playlistMatches):
         return render_template("playlist.html", 
             playlistInfo=playlistMatches)
+
+    # one artist matches
+    elif (len(artistMatches) == 1 and not songMatches and not userMatches
+        and not albumMatches and not playlistMatches):
+        artist = artistMatches[0]
+        artistAlbums = artistPage.get_artist_albums(conn, artist['artist_id'])
+        return render_template("artist.html", 
+            artist=artist, albumList=artistAlbums)
 
     # multiple matches
     else:
@@ -297,9 +313,15 @@ def query():
             playlistID = playlistDict['playlist_id']
             playlists.append(playlist.get_playlist_info(conn, playlistID))
 
+        # extract information for each matching artist
+        artists = []
+        for artistDict in artistMatches:
+            artistID = artistDict['artist_id']
+            artists.append(artistPage.get_artist(conn, artistID))
+
         return render_template('multiple.html', 
             albums=albums, songs=songs, users=users,
-            playlists=playlists, name = query,
+            playlists=playlists, name = query, artists=artists,
             page_title="Mutliple Results Found")
 
 
