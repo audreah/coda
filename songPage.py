@@ -40,13 +40,14 @@ def get_similar_songs(conn, text):
     return curs.fetchall()
 
 '''
-Gets all the genres.
+Gets all the genres (for both songs and playlists).
 :param conn: connection to database
 :returns: all of the genres in the database
 '''
 def get_genres(conn):
     curs = dbi.dict_cursor(conn)
-    curs.execute('select distinct genre from coda_song')
+    curs.execute('''select distinct genre from coda_song union (
+            select distinct playlist_genre from coda_playlist)''')
     genreDictList = curs.fetchall()
     return [genreDict['genre'] for genreDict in genreDictList]
 
@@ -54,14 +55,18 @@ def get_genres(conn):
 Gets all the songs of a given genre to organize the explore page.
 :param genre: one genre of interest
 :param conn: connection to database
-:returns: all the song ids grouped by genre
+:returns: all the song ids, titles, artists, and albums for that genre
 '''
 def songs_by_genre(conn, genre):
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select song_id from coda_song 
-        where genre = %s''', [genre])
+    genre = '%' + genre + '%'
+    curs.execute('''select song_id, song_title, 
+        artist_name, album_title from coda_song
+        join coda_album using(album_id)
+        join coda_artist using(artist_id)
+        where coda_song.genre like %s''', [genre])
     genreDictList = curs.fetchall()
-    return [genreDict['song_id'] for genreDict in genreDictList]
+    return genreDictList
 
 # ==========================================================
 # This starts the ball rolling, *if* the file is run as a
@@ -76,6 +81,6 @@ if __name__ == '__main__':
     # genres = get_genres(conn)
     # print(genres)
 
-    countrySongs = songs_by_genre(conn, 'Country')
+    countrySongs = songs_by_genre(conn, 'Christmas')
     print(countrySongs)
     

@@ -83,6 +83,7 @@ def updatePlaylist(conn,pid,newName,newGenre):
     conn.commit()
 
 '''
+
 Given a connection object, a playlist name, genre,
 and a user id, create a playlist
 '''
@@ -116,3 +117,27 @@ def addSongToPlaylist(conn,pid,sid):
     curs.execute(sql,[pid,sid])
     conn.commit()
     
+Gets all the playlists of a given genre to organize the explore page.
+:param genre: one genre of interest
+:param conn: connection to database
+:returns: all the song ids grouped by genre
+'''
+def playlists_by_genre(conn, genre):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select playlist_id, playlist_name from coda_playlist
+        where playlist_genre = %s''', [genre])
+    genreDictList = curs.fetchall()
+    return genreDictList
+
+'''
+(temporary) Get all the playlists in the db so we can add songs to them.
+
+:param conn: connection to db
+:returns: the names and ids of all playlists
+'''
+def get_playlists(conn):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('select playlist_id, playlist_name from coda_playlist')
+    playlistDictList = curs.fetchall()
+    return playlistDictList
+

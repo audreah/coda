@@ -4,23 +4,62 @@
 
 <h1>{{user.user_name}}</h1>
 
-<h2>Friends:</h2>
+<div class="tab">
+    <button class="tablinks" onclick="displayTab(event, 'Friends')" id = "default">Friends</button>
+    <button class="tablinks" onclick="displayTab(event, 'Playlists')">Playlists</button>
+</div>
+
+<div id="Friends" class="tabcontent">
 <ol>
-    {% for friend in friendsList %}
-        <li>
-            <a href= "{{ url_for('user', user_id = friend.user_id) }}">{{friend.user_name}}</a>
-        </li>
-    {% endfor %}
+    {% if friendsList|length %}
+        {% for friend in friendsList %}
+            <li>
+                <a href= "{{ url_for('user', user_id = friend.user_id) }}">{{friend.user_name}}</a>
+            </li>
+        {% endfor %}
+    {% else %}
+        <p>{{user.user_name}} Is Not Following Anyone</p>
+    {% endif %}
 </ol>
+
 <br>
 <h2>Playlists:</h2>
 <p><a href = "{{url_for('createPlaylist')}}"">Click here to create a new playlist!</a></p>
-<ol>
-    {% for playlist in playlists %}
-        <li>
-            <a href= "{{ url_for('playlistPage', pid = playlist.playlist_id) }}">{{playlist.playlist_name}}</a>
-        </li>
-    {% endfor %}
-</ol> 
 
+</div>
+
+<div id="Playlists" class="tabcontent">
+
+<ol>
+    {% if playlists|length %}
+        {% for playlist in playlists %}
+            <li>
+                <a href= "{{ url_for('playlistPage', pid = playlist.playlist_id) }}">{{playlist.playlist_name}}</a>
+            </li>
+        {% endfor %}
+    {% else %}
+        <p>{{user.user_name}} Has No Playlists Available</p>
+    {% endif %}
+
+</ol> 
+</div>
+<script>
+    function displayTab(evt, tab) {
+        var tabcontent;
+        var tablinks;
+        var index;
+        tabcontent = document.getElementsByClassName("tabcontent");
+        tablinks = document.getElementsByClassName("tablinks");
+        for (index = 0; index < tabcontent.length; index++) {
+            tabcontent[index].style.display = "none";
+        }
+        for (index = 0; index < tablinks.length; index++) {
+            tablinks[index].className = tablinks[index].className.replace(" active", "");
+        }
+        document.getElementById(tab).style.display = "block";
+        evt.currentTarget.className += " active";       
+    }
+
+    document.getElementById("default").click();
+</script>
 {% endblock %}
