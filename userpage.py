@@ -4,7 +4,7 @@
 import cs304dbi as dbi;
 
 # ==========================================================
-# The functions that do most of the work.
+# The functions that searches for user and their information.
 
 def search_user(conn, text):
     curs = dbi.dict_cursor(conn)

@@ -1,0 +1,17 @@
+{% extends "base.html" %} 
+
+{% block main_content %}
+
+<h1>{{artist.artist_name}}</h1>
+
+<h3>Albums:</h3>
+{% for album in albumList %}
+
+<li>
+   <a href= "{{ url_for('album', aid = album.album_id) }}">{{ album.album_title }} ({{ album.release_year }})</a> 
+</li>
+    
+
+{% endfor %}
+
+{% endblock %}

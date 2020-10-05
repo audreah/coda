@@ -17,7 +17,7 @@ specified person.
 '''
 def get_album(conn, aid):
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select album_id, album_title,artist_name,release_year from coda_album
+    curs.execute('''select album_id, album_title,artist_name,release_year, artist_id from coda_album
         join coda_artist using(artist_id)
         where album_id = %s''', [aid])
     return curs.fetchone()
