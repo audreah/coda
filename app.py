@@ -145,7 +145,9 @@ def album(aid):
 
 ''' 
 Returns information about the artist's name and the 
-title of the album on which it appears.
+title of the album on which it appears if get request, 
+if post request, add song to a playlist, and redirect to 
+that playlist page
 
 :param sid: a unique song id from the coda_song table
 :returns: not found page if song does not exist in the database
@@ -169,9 +171,15 @@ def song(sid):
                 page_title='Song | ' + song_info['song_title'])
         else: #add song to playlist
             pid = request.form.get("playlist-id")
-
-            playlist.addSongToPlaylist(conn,pid,sid)
-            return redirect(url_for('playlistPage', pid = pid))
+            currentSongs = playlist.get_playlist_songs(conn,pid)
+            currentSongIds = [elt['song_id'] for elt in currentSongs]
+            if sid in currentSongIds: #check if song exists in playlist already
+                flash(song_info['song_title'] + ' already exists in ' + 
+                    playlist.get_playlist_info(conn,pid)['playlist_name'])
+                return redirect(url_for('song',sid = sid))
+            else:
+                playlist.addSongToPlaylist(conn,pid,sid)
+                return redirect(url_for('playlistPage', pid = pid))
 
 '''Returns rendered insert template if get method, or if
 post method, creates a playlist and flashes a link to 
