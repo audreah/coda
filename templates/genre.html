@@ -80,8 +80,18 @@
                     {{ song['song_title'] }}
             </a>
         </td>
-        <td>{{ song['artist_name'] }}</td>
-        <td>{{ song['album_title'] }}</td>
+        <td>
+            <a href="{{url_for('artist', aid = song.artist_id)}}"
+                style='text-decoration:none'>
+                    {{ song['artist_name'] }}
+            </a>    
+        </td>
+        <td>
+            <a href="{{url_for('album', aid = song.album_id)}}"
+                style='text-decoration:none'>
+                    {{ song['album_title'] }}
+            </a> 
+        </td>
 
         </tr>
     {% endfor %}

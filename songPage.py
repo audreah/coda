@@ -8,60 +8,64 @@ import cs304dbi as dbi
 # ==========================================================
 # The functions that do most of the work.
 
-'''
-Get information about a song to display on the song's page.
-:param conn: connection to database
-:param sid: unique song id
-:returns: the song's title, genre, artist, release year, album,
-    and the user that uploaded it
-'''
 def get_song(conn, sid):
+    '''
+    Get information about a song to display on the song's page.
+    :param conn: connection to database
+    :param sid: unique song id as an integer
+    :returns: one dictionary with the song's title, genre, artist, 
+        release year, album, and the user that uploaded it
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''select song_title, genre, user_name,
-        artist_name, release_year, album_title, song_id from coda_song
+        artist_name, release_year, album_title, song_id,
+        artist_id, album_id, user_id
+        from coda_song
         join coda_album using(album_id)
         join coda_artist using(artist_id)
         join coda_user on coda_user.user_id = coda_song.added_by
         where song_id = %s''', [sid])
     return curs.fetchone()
 
-'''
-Gets the songs whose names are similar to the user's query
-if the query does not return an exact match.
-:param conn: connection to database
-:param text: the user's query
-:returns: all of the songs similar to the user's specification
-'''
 def get_similar_songs(conn, text):
+    '''
+    Gets the songs whose names are similar to the user's query
+    if the query does not return an exact match.
+    :param conn: connection to database
+    :param text: the user's query as a string
+    :returns: all of the songs similar to the user's specification
+    '''
     curs = dbi.dict_cursor(conn)
     userInput = '%' + text + '%'
     curs.execute('''select song_id, song_title from coda_song 
         where song_title COLLATE UTF8_GENERAL_CI LIKE %s''', [userInput])
     return curs.fetchall()
 
-'''
-Gets all the genres (for both songs and playlists).
-:param conn: connection to database
-:returns: all of the genres in the database
-'''
 def get_genres(conn):
+    '''
+    Gets all the genres (for both songs and playlists).
+    :param conn: connection to database
+    :returns: a list of all the genres in the database
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''select distinct genre from coda_song union (
             select distinct playlist_genre from coda_playlist)''')
     genreDictList = curs.fetchall()
     return [genreDict['genre'] for genreDict in genreDictList]
 
-'''
-Gets all the songs of a given genre to organize the explore page.
-:param genre: one genre of interest
-:param conn: connection to database
-:returns: all the song ids, titles, artists, and albums for that genre
-'''
 def songs_by_genre(conn, genre):
+    '''
+    Gets all the songs of a given genre to organize the explore page.
+    :param genre: the name of one genre of interest as a string
+    :param conn: connection to database
+    :returns: a list of dictionaries, where each dictionary has the 
+        song id, title, artist, and album for a song in that genre
+    '''
     curs = dbi.dict_cursor(conn)
     genre = '%' + genre + '%'
     curs.execute('''select song_id, song_title, 
-        artist_name, album_title from coda_song
+        artist_name, artist_id, 
+        album_title, album_id from coda_song
         join coda_album using(album_id)
         join coda_artist using(artist_id)
         where coda_song.genre like %s''', [genre])

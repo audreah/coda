@@ -33,7 +33,7 @@
 <h3> Users matching {{name}} </h3>
     <ul>
         {% for user in users %}
-            <li><a href="{{ url_for('user', user_id=user.user_id) }}">
+            <li><a href="{{ url_for('user', uid=user.user_id) }}">
 		{{user.user_name}}</a></li>
         {% endfor %}
     </ul>
@@ -41,7 +41,7 @@
 <h3> Artists matching {{name}} </h3>
     <ul>
         {% for artist in artists %}
-            <li><a href="{{ url_for('artist', artist_id=artist.artist_id) }}">
+            <li><a href="{{ url_for('artist', aid=artist.artist_id) }}">
         {{artist.artist_name}}</a></li>
         {% endfor %}
     </ul>

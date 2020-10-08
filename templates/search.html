@@ -7,7 +7,7 @@
 <ol>
     {% for user in users %}
         <li>
-            <a href= "{{ url_for('user', user_id = user.user_id) }}">{{user.user_name}}</a>
+            <a href= "{{ url_for('user', uid = user.user_id) }}">{{user.user_name}}</a>
         </li>
     {% endfor %}
 </ol>

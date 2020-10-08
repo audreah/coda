@@ -4,7 +4,7 @@
     <h2>{{playlistInfo.playlist_name}}</h2>
     <p>Genre: {{playlistInfo.playlist_genre}}</p>
     <p>Made by: 
-        <a href= "{{url_for('user', user_id = playlistInfo.created_by)}}">
+        <a href= "{{url_for('user', uid = playlistInfo.created_by)}}">
             {{playlistInfo.user_name}}
         </a>
     </p>
