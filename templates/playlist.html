@@ -23,7 +23,7 @@
     <div>
         <p>Edit this playlist</p>
 
-        <form method="POST" action="/playlist/{{playlistInfo.playlist_id}}">
+        <form method="POST" action="{{ url_for('playlistPage', pid=playlistInfo.playlist_id) }}">
             <table>
               <tr>
                 <td><label for="playlist-name">Playlist Name</label></td>

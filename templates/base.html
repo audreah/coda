@@ -23,7 +23,7 @@
  <div class="topnav">
     <ul>
       <li><a href = "{{ url_for('index') }}">Explore</a></li>
-      <form class="search" method="GET" action= "/query/">
+      <form class="search" method="GET" action= "{{ url_for('query') }}">
         <p><label>Search: <input type="text" name="searchbar"></label>
         <input type="submit" value="search"></p>
       </form>
