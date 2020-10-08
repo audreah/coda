@@ -40,12 +40,17 @@ def index():
             if oneGenre.strip().lower() not in genres]
     return render_template('main.html',title='Home',genres=sorted(genres))
 
-'''
-Displays name, genre, and creator for a playlist, along with all the
-songs that have been added to the playlist.
-'''
 @app.route('/playlist/<int:pid>', methods=["GET", "POST"]) 
 def playlistPage(pid):
+    '''
+    Displays name, genre, and creator for a playlist, along with all the
+    songs that have been added to the playlist.
+
+    Takes a unique playlist id as a parameter and returns that playlist's
+    page if found, the not found page if no playlist exists with that id,
+    or the profile page of the user who created that playlist if it is
+    deleted.
+    '''
     conn = dbi.connect()
     playlistInfo = playlist.get_playlist_info(conn,pid)
     nestedSongs = playlist.get_playlist_songs(conn,pid)
@@ -104,45 +109,45 @@ def playlistPage(pid):
         else: #delete playlist
             playlist.deletePlaylist(conn,pid)
             flash(oldName + ' deleted successfully')
-            return redirect(url_for('user',user_id = uid))
+            return redirect(url_for('user', uid = uid))
 
-'''
-Displays a user's name, friends, and playlists.
-:param user_id: unique id for a user
-:returns: the user's profile page
-'''
-@app.route('/user/<int:user_id>')
-def user(user_id):
+@app.route('/user/<int:uid>')
+def user(uid):
+    '''
+    Displays a user's name, friends, and playlists.
+    :param uid: unique id for a user
+    :returns: the user's profile page
+    '''
     conn = dbi.connect()
-    user = userpage.get_user_id(conn, user_id)
-    friendsList = userpage.get_friends(conn, user_id)
-    playlists = userpage.get_user_playlists(conn, user_id)
+    user = userpage.get_user_id(conn, uid)
+    friendsList = userpage.get_friends(conn, uid)
+    playlists = userpage.get_user_playlists(conn, uid)
     return (render_template("user.html", user= user, 
         friendsList = friendsList, playlists = playlists))
 
-'''
-Displays an artist's page, including their albums and songs.
-:param artist_id: unique id for an artist
-:returns: the artist's profile page
-'''
-@app.route('/artist/<int:artist_id>')
-def artist(artist_id):
+@app.route('/artist/<int:aid>')
+def artist(aid):
+    '''
+    Displays an artist's page, including their albums and songs.
+    :param aid: unique id for an artist
+    :returns: the artist's profile page
+    '''
     conn = dbi.connect()
-    artist = artistPage.get_artist(conn, artist_id)
-    albumList = artistPage.get_artist_albums(conn, artist_id)
+    artist = artistPage.get_artist(conn, aid)
+    albumList = artistPage.get_artist_albums(conn, aid)
     return (render_template("artist.html", artist = artist, 
         albumList = albumList))
 
-''' 
-This is the route for album lookups. It renders a template 
-with information about the artist and songs in it.
-
-:param pid: a unique album id from the coda_album table
-:returns: not found page if album does not exist in the database
-          the desired album's indiviual page otherwise
-'''
 @app.route('/album/<int:aid>', methods=["GET", "POST"])
 def album(aid):
+    ''' 
+    This is the route for album lookups. It renders a template 
+    with information about the artist and songs in it.
+
+    :param pid: a unique album id from the coda_album table
+    :returns: not found page if album does not exist in the database
+            the desired album's indiviual page otherwise
+    '''
     conn = dbi.connect()
     albumInfo = albumPage.get_album(conn, aid)
     songs = albumPage.get_songs(conn, aid)
@@ -157,18 +162,18 @@ def album(aid):
         songs=songs,
         page_title='Album | ' + albumInfo['album_title'])
 
-''' 
-Returns information about the artist's name and the 
-title of the album on which it appears if get request, 
-if post request, add song to a playlist, and redirect to 
-that playlist page
-
-:param sid: a unique song id from the coda_song table
-:returns: not found page if song does not exist in the database
-          the desired page for that song otherwise
-'''
 @app.route('/song/<int:sid>', methods = ['GET','POST'])
 def song(sid):
+    ''' 
+    Returns information about the artist's name and the 
+    title of the album on which it appears if get request, 
+    if post request, add song to a playlist, and redirect to 
+    that playlist page
+
+    :param sid: a unique song id from the coda_song table
+    :returns: not found page if song does not exist in the database
+            the desired page for that song otherwise
+    '''
     conn = dbi.connect()
     song_info = songPage.get_song(conn, sid)
     playlists = playlist.get_playlists(conn)
@@ -181,7 +186,8 @@ def song(sid):
         if request.method == 'GET': #display playlist info
             allPlaylists = playlist.get_all_playlists(conn)
             return render_template('song.html', 
-                song=song_info, sid = sid, playlists = allPlaylists,
+                song=song_info, 
+                sid = sid, playlists = allPlaylists,
                 page_title='Song | ' + song_info['song_title'])
         else: #add song to playlist
             pid = request.form.get("playlist-id")
@@ -195,11 +201,11 @@ def song(sid):
                 playlist.addSongToPlaylist(conn,pid,sid)
                 return redirect(url_for('playlistPage', pid = pid))
 
-'''Returns rendered insert template if get method, or if
-post method, creates a playlist and flashes a link to 
-the new playlist'''
 @app.route('/playlist/create', methods = ['GET','POST'])
 def createPlaylist():
+    '''Returns rendered insert template if get method, or if
+    post method, creates a playlist and flashes a link to 
+    the new playlist'''
     conn = dbi.connect()
     if request.method == 'GET':
         return render_template('createPlaylist.html')
@@ -222,16 +228,16 @@ def createPlaylist():
                 try a different name!''')
             return redirect(url_for('createPlaylist'))
 
-''' 
-Returns a template displaying playlists and songs that fit
-under the given genre.
-
-:param genreName: playlist or song genre
-:returns: not found page if genre does not exist in the database
-          all the playlists and songs with that genre
-'''
 @app.route('/genre/<string:genreName>')
 def genre(genreName):
+    ''' 
+    Returns a template displaying playlists and songs that fit
+    under the given genre.
+
+    :param genreName: playlist or song genre
+    :returns: not found page if genre does not exist in the database
+            all the playlists and songs with that genre
+    '''
     conn = dbi.connect()
     playlists = playlist.playlists_by_genre(conn, genreName)
     songs = songPage.songs_by_genre(conn, genreName)
@@ -244,14 +250,14 @@ def genre(genreName):
             page_title=genreName, genre=genreName[0].upper() + genreName[1:],
             playlists=playlists, songs=songs)
 
-'''
-Renders the template for the user's search.
-:returns: the individual page for an item (album, song, playlist, 
-    user, or artist) if there is exactly one match
-    otherwise, lists out all matches with links to their individual pages.
-'''
 @app.route('/query/', methods=['GET'])
 def query():
+    '''
+    Renders the template for the user's search.
+    :returns: the individual page for an item (album, song, playlist, 
+        user, or artist) if there is exactly one match
+        otherwise, lists out all matches with links to their individual pages.
+    '''
     conn = dbi.connect()
     query = request.args['searchbar'] # query text
     albumMatches = albumPage.get_similar_albums(conn, query)

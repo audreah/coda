@@ -7,7 +7,7 @@ Lists the album title, artist, release year, and songs. -->
 
 <H1 class='album'> {{albumDescription.album_title}} </H1>
 <p>Title: {{albumDescription.album_title}}</p>
-<p>Artist: <a href= "{{ url_for('artist', artist_id = albumDescription.artist_id) }}">{{albumDescription.artist_name}}</a></p> 
+<p>Artist: <a href= "{{ url_for('artist', aid = albumDescription.artist_id) }}">{{albumDescription.artist_name}}</a></p> 
 <p>Release Year: {{albumDescription.release_year}}</p>   
 
 <h3> Songs in this album:</h3>

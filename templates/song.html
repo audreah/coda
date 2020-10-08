@@ -8,11 +8,14 @@ and who added the song to the database. -->
 
 <H1 class='song'> {{song.song_title}} </H1>
 <p>Title: {{song.song_title}}</p>
-<p>Artist: {{song.artist_name}}</p> 
+<p>Artist: <a href="{{url_for('artist', aid=song.artist_id)}}">
+    {{song.artist_name}}</a></p> 
 <p>Genre: {{song.genre}}</p> 
-<p>Appears on: {{song.album_title}}</p>
+<p>Appears on: <a href="{{url_for('album', aid=song.album_id)}}">
+    {{song.album_title}}</a></p>
 <p>Release Year: {{song.release_year}}</p>
-<p>Added by: {{song.user_name}}</p>
+<p>Added by: <a href="{{url_for('user', uid=song.user_id)}}">
+    {{song.user_name}}</a></p>
 
 <!-- TODO: only display playlists of the current user -->
 <form method="POST" action="{{url_for('song', sid = sid)}}">

@@ -19,7 +19,7 @@ def get_user_id(conn, user_id):
 
 def get_friends(conn, user_id):
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select * from coda_user where user_id = 
+    curs.execute('''select * from coda_user where user_id in
     (select friend_two from coda_friend where friend_one = %s)''', [user_id])
     return curs.fetchall()
 
