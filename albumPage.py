@@ -8,44 +8,47 @@ import cs304dbi as dbi
 # ==========================================================
 # The functions that do most of the work.
 
-''' 
-Extracts the relevant name, birthdate, and id for the
-specified person.
-
-:param conn: connection to database
-:param pid: a unique id from the person table
-'''
 def get_album(conn, aid):
+    ''' 
+    Extracts the relevant album title, release year, and artist name
+    for the specified album.
+
+    :param conn: connection to database
+    :param aid: a unique id from the album table
+    :returns: a dictionary with the album's id, title, release year,
+        and artist's id and name
+    '''
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select album_id, album_title,artist_name,release_year, artist_id from coda_album
+    curs.execute('''select album_id, album_title, artist_name,
+        release_year, artist_id from coda_album
         join coda_artist using(artist_id)
         where album_id = %s''', [aid])
     return curs.fetchone()
 
-''' 
-Get the songs on this album.
-
-:param conn: connection to database
-:param pid: a unique id from the person table
-:returns: a list of dictionaries for songs on the album
-'''
 def get_songs(conn, aid):
+    ''' 
+    Get the songs on this album.
+
+    :param conn: connection to database
+    :param aid: a unique id from the album table
+    :returns: a list of dictionaries for song ids and titles on the album
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''select song_id, song_title from coda_song
         where album_id = %s''', [aid])
     return curs.fetchall()
 
-''' 
-Get a list of all the albums with names similar to the user's search.
-
-:param conn: connection to movie database
-:param text: user's input to indicate person of interest
-'''
 def get_similar_albums(conn, text):
+    ''' 
+    Get a list of all the albums with names similar to the user's search.
+
+    :param conn: connection to database
+    :param text: string with user's input to indicate person of interest
+    '''
     curs = dbi.dict_cursor(conn)
     userInput = '%' + text + '%'
     curs.execute('''select album_id, album_title from coda_album 
-        where album_title COLLATE UTF8_GENERAL_CI LIKE %s''', [userInput])
+        where album_title LIKE %s''', [userInput])
     return curs.fetchall()
 
 # ==========================================================

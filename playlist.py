@@ -5,11 +5,16 @@ Gets information about playlists from the coda_db database
 
 import cs304dbi as dbi
 
-'''
-Given a connection object and playlist id, gets the name, 
-genre, and creator of that playlist
-'''
 def get_playlist_info(conn,pid):
+    """
+    Given a connection object and playlist id, gets the name, 
+    genre, and creator of that playlist
+
+    :param conn: connection to database
+    :param pid: integer indicating unique playlist id
+    :returns: a single dictionary containing the playlist's name, genre, id,
+        and the id and name of the user who created it
+    """
     curs = dbi.dict_cursor(conn)
     sql = '''select playlist_name, playlist_genre, user_name, playlist_id, created_by
             from coda_playlist 
@@ -20,33 +25,35 @@ def get_playlist_info(conn,pid):
     return curs.fetchone()
 
 # TODO: modify to only get the current user's playlists
-'''
-Given a connection object, return all playlists in the database
-'''
+
 def get_all_playlists(conn):
+    """
+    Given a connection object, return all playlists in the database
+    """
     curs = dbi.dict_cursor(conn)
     sql = '''select * from coda_playlist'''
     curs.execute(sql)
     return curs.fetchall()
 
-'''                                                                             
-Returns the playlists whose names are similar to the user's query
-if the query does not return one direct result.
-:param conn: connection to database
-:param query: playlist name that the user specifies     
-'''
 def get_similar_playlists(conn,query):
+    """                                                                         
+    Returns the playlists whose names are similar to the user's query
+    if the query does not return one direct result.
+
+    :param conn: connection to database
+    :param query: string indicating playlist name that the user specifies     
+    """
     curs = dbi.dict_cursor(conn)                                              
     userInput = '%' + query + '%'
     curs.execute('''select playlist_id, playlist_name from coda_playlist         
-        where playlist_name COLLATE UTF8_GENERAL_CI LIKE %s''', [userInput])
+        where playlist_name LIKE %s''', [userInput])
     return curs.fetchall()
 
-'''
-Given a connection object and playlist id, gets the songs 
-in that playlist
-'''
 def get_playlist_songs(conn,pid):
+    """
+    Given a connection object and integer playlist id, gets the songs 
+    in that playlist
+    """
     curs = dbi.dict_cursor(conn)
     sql = '''select song_title, song_id 
             from coda_song 
@@ -55,11 +62,11 @@ def get_playlist_songs(conn,pid):
     curs.execute(sql,[pid])
     return curs.fetchall()
 
-'''
-Given a connection object, a playlist name, and a user id,
-check if the user already has a playlist with that name
-'''
 def check_unique_playlist_name(conn,pName, uid):
+    """
+    Given a connection object, a playlist name, and a user id,
+    checks if the user already has a playlist with that name
+    """
     curs = dbi.cursor(conn)
     sql = '''select count(playlist_name)
             from coda_playlist 
@@ -70,11 +77,16 @@ def check_unique_playlist_name(conn,pName, uid):
         return True
     return False
 
-'''
-Given a connection object, a playlist id, a new name,
-and a new genre, update the playlist
-'''
 def updatePlaylist(conn,pid,newName,newGenre):
+    """
+    Given a connection object, a playlist id, a new name,
+    and a new genre, update the playlist
+
+    :param conn: connection to database
+    :param pid: integer representing unique playlist it
+    :param newName: string for new playlist name
+    :param newGenre: string for new genre name for this playlist
+    """
     curs = dbi.cursor(conn)
     sql = '''update coda_playlist
             set playlist_name = %s, playlist_genre = %s
@@ -82,12 +94,16 @@ def updatePlaylist(conn,pid,newName,newGenre):
     curs.execute(sql,[newName,newGenre,pid])
     conn.commit()
 
-'''
-
-Given a connection object, a playlist name, genre,
-and a user id, create a playlist
-'''
 def createPlaylist(conn,name,genre,user):
+    """
+    Given a connection object, a playlist name, genre,
+    and a user id, create a playlist
+
+    :param conn: database connection
+    :param name: string with playlist name
+    :param genre: string with genre name
+    :param user: integer for user id
+    """
     curs = dbi.cursor(conn)
     sql = '''insert into coda_playlist
                         (playlist_name,playlist_genre,created_by)
@@ -95,36 +111,42 @@ def createPlaylist(conn,name,genre,user):
     curs.execute(sql,[name,genre,user])
     conn.commit()
 
-'''
-Given a connection object and a playlist id, 
-delete the playlist
-'''
 def deletePlaylist(conn,pid):
+    """
+    Given a connection object and a playlist id, 
+    delete the playlist
+
+    :param conn: database connection
+    :param pid: integer for playlist id
+    """
     curs = dbi.cursor(conn)
     sql = '''delete from coda_playlist
                     where playlist_id = %s'''
     curs.execute(sql,[pid])
     conn.commit()
 
-''' 
-Given a connection object, a song id, and a playlist id, 
-add that song to the playlist
-'''
 def addSongToPlaylist(conn,pid,sid):
+    ''' 
+    Given a connection object, a song id, and a playlist id, 
+    add that song to the playlist
+
+    :param conn: database connection
+    :param pid: integer for playlist id
+    :param sid: integer for song id
+    '''
     curs = dbi.cursor(conn)
     sql = '''insert into coda_playlist_songs(playlist_id,song_id)
             values (%s,%s)'''
     curs.execute(sql,[pid,sid])
     conn.commit()
 
-    
-'''  
-Gets all the playlists of a given genre to organize the explore page.
-:param genre: one genre of interest
-:param conn: connection to database
-:returns: all the song ids grouped by genre
-'''
 def playlists_by_genre(conn, genre):
+    """  
+    Gets all the playlists of a given genre to organize the explore page.
+    :param genre: one genre of interest
+    :param conn: connection to database
+    :returns: all the song ids grouped by genre
+    """
     curs = dbi.dict_cursor(conn)
     curs.execute('''select playlist_id, playlist_name from coda_playlist
         where playlist_genre = %s''', [genre])

@@ -247,7 +247,7 @@ def genre(genreName):
             type='No genre', page_title="Genre Not Found")
     
     return render_template('genre.html',
-            page_title=genreName, genre=genreName[0].upper() + genreName[1:],
+            page_title=genreName, genre=genreName.title(),
             playlists=playlists, songs=songs)
 
 @app.route('/query/', methods=['GET'])
