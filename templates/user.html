@@ -1,8 +1,11 @@
 {% extends "base.html" %} 
 
 {% block main_content %}
-
+<div class="user">
 <h1>{{user.user_name}}</h1>
+<button type="button" class = "button" onclick="window.location.href= '{{ url_for('editUsername', uid = user.user_id) }}';">Edit User</button>
+<br>
+</div>
 
 <div class="tab">
     <button class="tablinks" onclick="displayTab(event, 'Friends')" id = "default">Friends</button>

@@ -125,6 +125,21 @@ def user(uid):
     return (render_template("user.html", user= user, 
         friendsList = friendsList, playlists = playlists))
 
+@app.route('/user/<int:uid>/edit/', methods=["GET", "POST"])
+def editUsername(uid):
+    '''
+    Edits a user's name.
+    :param uid: unique id for a user
+    '''
+    conn = dbi.connect()
+    if request.method == 'GET':
+        return render_template('editUsername.html')
+    else:
+        newName = request.form.get('user-name')
+        userpage.update_username(conn, uid, newName)
+        flash('Your user profile has been updated!')
+        return redirect(url_for("user", uid = uid))
+
 @app.route('/artist/<int:aid>')
 def artist(aid):
     '''
