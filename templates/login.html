@@ -1,0 +1,37 @@
+<!-- Audrea Huang, Danya Gao, Liz Huang
+     CS 304 Fall 2020 T1 | Coda -->
+
+
+<!doctype html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <meta name=author content="Scott D. Anderson">
+    <title>{{ page_title }}</title>
+    <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
+    {% block head_stuff %} {% endblock %}
+</head>
+<body>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div id="messages">
+        {% for msg in messages %}
+            <p>{{msg}}</p>
+        {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+{% block main_content %}
+<div class="login">
+    <h1>welcome to coda</h1><br>
+    <form method="GET" action="{{url_for('cas.login')}}">
+        <button>login</button>
+    </form>
+</div>
+
+{% endblock %}
+
+</body>
+</html>

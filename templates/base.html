@@ -19,14 +19,32 @@
 </div>
 {% endif %}
 {% endwith %}
-            
+              
+
  <div class="topnav">
     <ul>
-      <li><a href = "{{ url_for('index') }}">Explore</a></li>
-      <form class="search" method="GET" action= "{{ url_for('query') }}">
+      <li><a href = "{{ url_for('explore') }}">Explore</a></li>
+      <li><form class="search" method="GET" action= "{{ url_for('query') }}">
         <p><label>Search: <input type="text" name="searchbar"></label>
         <input type="submit" value="search"></p>
-      </form>
+      </form></li>
+
+      <li>
+        
+        {% if session.CAS_USERNAME %}
+
+          <form method="GET" action="{{url_for('cas.logout')}}">
+            <button class="button">logout {{ session.CAS_USERNAME }}</button>
+          </form>
+          
+        {% else %}
+        
+          <form method="GET" action="{{url_for('cas.login')}}">
+            <button>login</button>
+          </form>
+        
+        {% endif %} 
+        </li>
     </ul>
   </div>
 
