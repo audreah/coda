@@ -24,6 +24,7 @@
  <div class="topnav">
     <ul>
       <li><a href = "{{ url_for('explore') }}">Explore</a></li>
+      <li><a href = "{{ url_for('addSongs') }}">Add Song</li>
       <li><form class="search" method="GET" action= "{{ url_for('query') }}">
         <p><label>Search: <input type="text" name="searchbar"></label>
         <input type="submit" value="search"></p>

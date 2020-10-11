@@ -75,3 +75,79 @@ def update_username(conn, user_id, newName):
     curs.execute('''update coda_user set user_name = %s 
     where user_id = %s''', [newName, user_id])
     conn.commit()
+
+"""
+    Allows user to add artist to coda database.
+
+    :param conn: connection to database
+    :param artist_name: text input of artist name
+"""
+def add_artist(conn, artist_name):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''insert into coda_artist(artist_name) values (%s)''', [artist_name])
+    conn.commit()
+
+"""
+    Allows user to add album to coda database.
+
+    :param conn: connection to database
+    :param album_title: text input of album title
+    :param artist_name: text input of artist name
+"""
+def add_album(conn, album_title, artist_name):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''insert into coda_album(album_title,artist_id)
+    values (%s, (select artist_id from coda_artist where artist_name = %s))''', [album_title, artist_name])
+    conn.commit()
+
+'''when session/log in is working add user_id'''
+def add_song(conn, song_title, genre, album_title, artist_name):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''insert into coda_song(song_title,genre,album_id,added_by)
+    values (%s, %s, 
+    (select album_id from coda_album where album_title = %s 
+    and artist_id = (select artist_id from coda_artist where artist_name = %s)));''',
+    [song_title, genre, album_title, artist_name])
+    conn.commit()
+
+"""
+    Retrieves artist id if artist already exists in database.
+
+    :param conn: connection to database
+    :param artist_name: text input of artist name
+"""
+def get_artistId(conn, artist_name):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select artist_id from coda_artist where artist_name = %s''', [artist_name])
+    return curs.fetchone()
+
+def check_artist(conn, artist_name):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select * from coda_artist where artist_name = %s''', [artist_name])
+    result = curs.fetchone()
+    if result == 0:
+        '''returns true if no artist with the name exist in database'''
+        return True
+    return False
+
+def check_song(conn, song_title, album_name):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select song_id from coda_song where song_title = %s and album_id = 
+    (select album_id from coda_album where album_title = %s))''',
+    [song_title, album_name])
+    result = curs.fetchone()
+    if result == 0:
+        '''returns true if song does not already exist in database'''
+        return True
+    return False
+
+def check_album(conn, album_title, artist_name):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select album_id from coda_album where album_title = %s and artist_id = 
+    (select artist_id from coda_artist where artist_name = %s)''',
+    [album_title, artist_name])
+    result = curs.fetchone()
+    if result == 0:
+        '''returns true if album does not exist in database'''
+        return True
+    return False
