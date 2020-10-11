@@ -3,13 +3,17 @@
 {% block main_content %}
 <div class="user">
 <h1>{{user.user_name}}</h1>
-<button type="button" class = "button" onclick="window.location.href= '{{ url_for('editUsername', uid = user.user_id) }}';">Edit User</button>
+<button type="button" class = "button" onclick="window.location.href= 
+    '{{ url_for('editUsername', uid = user.user_id) }}';">Edit User
+</button>
 <br>
 </div>
 
 <div class="tab">
-    <button class="tablinks" onclick="displayTab(event, 'Friends')" id = "default">Friends</button>
-    <button class="tablinks" onclick="displayTab(event, 'Playlists')">Playlists</button>
+    <button class="tablinks" onclick="displayTab(event, 'Friends')" 
+        id = "default">Friends</button>
+    <button class="tablinks" onclick="displayTab(event, 'Playlists')">
+        Playlists</button>
 </div>
 
 <div id="Friends" class="tabcontent">
@@ -17,11 +21,12 @@
     {% if friendsList|length %}
         {% for friend in friendsList %}
             <li>
-                <a href= "{{ url_for('user', uid = friend.user_id) }}">{{friend.user_name}}</a>
+                <a href= "{{ url_for('user', uid = friend.user_id) }}">
+                    {{friend.user_name}}</a>
             </li>
         {% endfor %}
     {% else %}
-        <p>{{user.user_name}} Is Not Following Anyone</p>
+        <p>{{user.user_name}} is not following anyone</p>
     {% endif %}
 </ol>
 
@@ -33,16 +38,19 @@
     {% if playlists|length %}
         {% for playlist in playlists %}
             <li>
-                <a href= "{{ url_for('playlistPage', pid = playlist.playlist_id) }}">{{playlist.playlist_name}}</a>
+                <a href= "{{ url_for('playlistPage', 
+                    pid = playlist.playlist_id) }}">
+                    {{playlist.playlist_name}}</a>
             </li>
         {% endfor %}
     {% else %}
-        <p>{{user.user_name}} Has No Playlists Available</p>
+        <p>{{user.user_name}} has no available playlists</p>
     {% endif %}
 
 </ol> 
     <br>
-    <button type="button" class = "button" onclick="window.location.href= '{{ url_for('createPlaylist') }}';">Create New Playlist</button>
+    <button type="button" class="button" onclick="window.location.href= 
+        '{{ url_for('createPlaylist') }}';">Create New Playlist</button>
 </div>
 <script>
     function displayTab(evt, tab) {
@@ -55,7 +63,8 @@
             tabcontent[index].style.display = "none";
         }
         for (index = 0; index < tablinks.length; index++) {
-            tablinks[index].className = tablinks[index].className.replace(" active", "");
+            tablinks[index].className = 
+                tablinks[index].className.replace(" active", "");
         }
         document.getElementById(tab).style.display = "block";
         evt.currentTarget.className += " active";       

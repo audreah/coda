@@ -3,7 +3,7 @@
 
 HTML {
     --color-header: #ededed;  /* color for H1-H6 and others. was deepskyblue but poor contrast. */
-    --color-hilite: #df0000;  /* was red, but this avoids WAVE contrast errors */ 
+    --color-hilite: #ed6868;  /* was red, but this avoids WAVE contrast errors */ 
     --color-focus: #56B929;
     --font-family: Verdana;
     font-family: var(--font-family)
@@ -37,6 +37,10 @@ a:link {
 
 a:visited {
     color: rgba(255, 255, 255, 0.701);
+}
+
+.login {
+  text-align: center;
 }
 
 /* for a simple navbar. Talk to Scott if you want drop-downs. */
@@ -122,6 +126,14 @@ a:visited {
   .tabcontent .button:hover {
     background-color: #747474; /* Green */
     color: white;
+  }
+
+  .subheading {
+    color:rgb(100, 132, 154)
+  }
+
+  .genre {
+    color:rgb(194, 174, 144)
   }
 /*
   input[type="submit"] {
