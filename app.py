@@ -200,6 +200,48 @@ def editUsername(uid):
         flash('Your user profile has been updated!')
         return redirect(url_for("user", uid = uid))
 
+@app.route('/add_song/', methods=["GET", "POST"])
+def addSongs():
+    '''
+    Allows user to add songs to coda database
+    '''
+    conn = dbi.connect()
+    if request.method == 'GET':
+        return render_template('addSongs.html')
+    else:
+        artistName = request.form.get('artist_name')
+        albumName = request.form.get('album_name')
+        songName = request.form.get('song_name')
+        genre = request.form.get('genre')
+
+        # checks if artist already in database, returns true if not in database
+        if (userpage.check_artist(conn, artistName)):
+            userpage.add_artist(conn, artistName)
+            userpage.add_album(conn, albumName, artistName)
+            userpage.add_song(conn, songName, genre, albumName, artistName)
+            flash(songName + " has been added to coda database!")
+            return redirect(url_for(addSongs))
+        #artist already in database
+        else:
+            #returns true if album is not in database
+            if(userpage.check_album(conn, albumName, artistName)):
+                userpage.add_album(conn, albumName)
+
+                #returns true if song is not in database
+                if(userpage.check_song(conn, songName, albumName)):
+                    userpage.add_song(conn, songName, genre, albumName, artistName)
+                    flash(songName + " has been added to coda database!")
+                    return redirect(url_for(addSongs))
+                else:
+                    flash("Song is already in database!")
+                    return redirect(url_for(addSongs))
+
+            #if artist and album already in database
+            else:
+                userpage.add_song(conn, songName, genre, albumName, artistName)
+                flash(songName + " has been added to coda database!")
+                return redirect(url_for(addSongs))
+
 @app.route('/artist/<int:aid>')
 def artist(aid):
     '''
