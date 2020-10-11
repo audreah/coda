@@ -101,13 +101,12 @@ def add_album(conn, album_title, artist_name):
     conn.commit()
 
 '''when session/log in is working add user_id'''
-def add_song(conn, song_title, genre, album_title, artist_name):
+def add_song(conn, song_title, genre, album_title):
     curs = dbi.dict_cursor(conn)
-    curs.execute('''insert into coda_song(song_title,genre,album_id,added_by)
+    curs.execute('''insert into coda_song(song_title,genre,album_id)
     values (%s, %s, 
-    (select album_id from coda_album where album_title = %s 
-    and artist_id = (select artist_id from coda_artist where artist_name = %s)));''',
-    [song_title, genre, album_title, artist_name])
+    (select album_id from coda_album where album_title = %s))''',
+    [song_title, genre, album_title])
     conn.commit()
 
 """
