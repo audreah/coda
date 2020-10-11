@@ -58,7 +58,6 @@ a:visited {
 .topnav li {
     float: left;
     display: block;
-    margin-top: 0em;
 }
 .topnav li a {
     display: block;
@@ -70,6 +69,8 @@ a:visited {
 
 .topnav ul form {
     color: white;
+    display: block;
+    padding: 16px 16px;
 }
 
 .topnav ul li a:hover {
