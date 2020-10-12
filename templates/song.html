@@ -1,4 +1,4 @@
-<!-- Author: Audrea Huang - Fall T1 2020 -->
+<!-- Author: Audrea Huang, Danya Gao - Fall T1 2020 -->
 <!-- Template for describing information about a song. 
 Displays the title, artist, release year, which album it appears on,
 and who added the song to the database. -->
@@ -17,16 +17,22 @@ and who added the song to the database. -->
 <p>Added by: <a href="{{url_for('user', uid=song.user_id)}}">
     {{song.user_name}}</a></p>
 
-<!-- TODO: only display playlists of the current user -->
 <form method="POST" action="{{url_for('song', sid = sid)}}">
-    <p>Add this song to a playlist below:</p> 
-        {% for playlist in playlists %}
-            <li>
-                <button class = "button" type="submit" name="playlist-id" value="{{playlist.playlist_id}}">
-                {{playlist.playlist_name}}
-                </button>
-            </li>
-        {% endfor %}
+
+        {% if not playlists %}
+            <p>You have not yet created a playlist, click here to create one</p>
+                <button>Create Playlist</button>
+        {% else %}
+            <p>Add this song to a playlist below:</p> 
+            {% for playlist in playlists %}
+                <li>
+                    <button class = "button" type="submit" name="playlist-id" value="{{playlist.playlist_id}}">
+                    {{playlist.playlist_name}}
+                    </button>
+                </li>
+            {% endfor %}
+        {% endif %}
+
 </form>
 
 

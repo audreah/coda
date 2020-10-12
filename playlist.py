@@ -24,15 +24,15 @@ def get_playlist_info(conn,pid):
     curs.execute(sql,[pid])
     return curs.fetchone()
 
-# TODO: modify to only get the current user's playlists
-
-def get_all_playlists(conn):
+def get_all_playlists_by_user(conn,uid):
     """
-    Given a connection object, return all playlists in the database
+    Given a connection object and a uid, return all playlists in the database created by 
+    that user
     """
     curs = dbi.dict_cursor(conn)
-    sql = '''select * from coda_playlist'''
-    curs.execute(sql)
+    sql = '''select * from coda_playlist
+            where created_by = %s'''
+    curs.execute(sql,[uid])
     return curs.fetchall()
 
 def get_similar_playlists(conn,query):
