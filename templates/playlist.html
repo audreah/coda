@@ -19,7 +19,7 @@
             {% endfor %}
         </ul>
     </div>
-
+  {% if session.CAS_USERNAME == createdby.username %}
     <div>
         <p>Edit this playlist</p>
 
@@ -39,5 +39,5 @@
           </form>
     </p>
     </div>
-
+  {% endif %}
 {% endblock %}

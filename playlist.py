@@ -24,15 +24,15 @@ def get_playlist_info(conn,pid):
     curs.execute(sql,[pid])
     return curs.fetchone()
 
-def get_all_playlists_by_user(conn,uid):
+def get_all_playlists_by_user(conn,username):
     """
     Given a connection object and a uid, return all playlists in the database created by 
     that user
     """
     curs = dbi.dict_cursor(conn)
     sql = '''select * from coda_playlist
-            where created_by = %s'''
-    curs.execute(sql,[uid])
+            where created_by = (select user_id from coda_user where username = %s)'''
+    curs.execute(sql,[username])
     return curs.fetchall()
 
 def get_similar_playlists(conn,query):
@@ -62,7 +62,7 @@ def get_playlist_songs(conn,pid):
     curs.execute(sql,[pid])
     return curs.fetchall()
 
-def check_unique_playlist_name(conn,pName, uid):
+def check_unique_playlist_name(conn,pName, username):
     """
     Given a connection object, a playlist name, and a user id,
     checks if the user already has a playlist with that name
@@ -70,8 +70,8 @@ def check_unique_playlist_name(conn,pName, uid):
     curs = dbi.cursor(conn)
     sql = '''select count(playlist_name)
             from coda_playlist 
-            where playlist_name = %s and created_by = %s'''
-    curs.execute(sql,[pName,uid])
+            where playlist_name = %s and created_by = (select user_id from coda_user where username = %s)'''
+    curs.execute(sql,[pName,username])
     res = curs.fetchall()
     if res[0][0] == 0:
         return True
@@ -102,12 +102,12 @@ def createPlaylist(conn,name,genre,user):
     :param conn: database connection
     :param name: string with playlist name
     :param genre: string with genre name
-    :param user: integer for user id
+    :param user: CAS session user name
     """
     curs = dbi.cursor(conn)
     sql = '''insert into coda_playlist
                         (playlist_name,playlist_genre,created_by)
-             values (%s,%s,%s)'''
+             values (%s,%s,(select user_id from coda_user where username = %s))'''
     curs.execute(sql,[name,genre,user])
     conn.commit()
 
