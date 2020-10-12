@@ -258,7 +258,7 @@ def addSongs():
             else:
                 #returns true if album is not in database
                 if(userpage.check_album(conn, albumName, artistName)):
-                    userpage.add_album(conn, albumName)
+                    userpage.add_album(conn, albumName, artistName)
 
                     #returns true if song is not in database
                     if(userpage.check_song(conn, songName, albumName)):
@@ -351,7 +351,6 @@ def song(sid):
                     song=song_info, 
                     sid = sid, playlists = userPlaylists, loggedin = True,
                     page_title='Song | ' + song_info['song_title'])
-                
                 
             else: #forms to add song to a playlist, or create a playlist
                 if request.form.get('create-playlist'): 
