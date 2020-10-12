@@ -2,7 +2,7 @@
 
 {% block main_content %}
 <div class="user">
-<h1>{{user.user_name}}</h1>
+<h1>{{user.display_name}}</h1>
 <button type="button" class = "button" onclick="window.location.href= 
     '{{ url_for('editUsername', uid = user.user_id) }}';">Edit User
 </button>
@@ -22,11 +22,11 @@
         {% for friend in friendsList %}
             <li>
                 <a href= "{{ url_for('user', uid = friend.user_id) }}">
-                    {{friend.user_name}}</a>
+                    {{friend.display_name}}</a>
             </li>
         {% endfor %}
     {% else %}
-        <p>{{user.user_name}} is not following anyone</p>
+        <p>{{user.display_name}} is not following anyone</p>
     {% endif %}
 </ol>
 
@@ -44,7 +44,7 @@
             </li>
         {% endfor %}
     {% else %}
-        <p>{{user.user_name}} has no available playlists</p>
+        <p>{{user.display_name}} has no available playlists</p>
     {% endif %}
 
 </ol> 

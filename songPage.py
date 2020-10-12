@@ -17,7 +17,7 @@ def get_song(conn, sid):
         release year, album, and the user that uploaded it
     '''
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select song_title, genre, user_name,
+    curs.execute('''select song_title, genre, display_name,
         artist_name, release_year, album_title, song_id,
         artist_id, album_id, user_id
         from coda_song

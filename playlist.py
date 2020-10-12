@@ -16,8 +16,8 @@ def get_playlist_info(conn,pid):
         and the id and name of the user who created it
     """
     curs = dbi.dict_cursor(conn)
-    sql = '''select playlist_name, playlist_genre, user_name, playlist_id, created_by
-            from coda_playlist 
+    sql = '''select playlist_name, playlist_genre, display_name, playlist_id, 
+            created_by from coda_playlist 
             inner join coda_user on 
                 (coda_user.user_id = coda_playlist.created_by)
             where playlist_id = %s'''
