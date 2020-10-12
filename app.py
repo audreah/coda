@@ -258,7 +258,7 @@ def addSongs():
             else:
                 #returns true if album is not in database
                 if(userpage.check_album(conn, albumName, artistName)):
-                    userpage.add_album(conn, albumName)
+                    userpage.add_album(conn, albumName, artistName)
 
                     #returns true if song is not in database
                     if(userpage.check_song(conn, songName, albumName)):
