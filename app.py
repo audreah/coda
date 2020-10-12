@@ -133,7 +133,7 @@ def playlistPage(pid):
             newName = request.form.get('playlist-name')
             newGenre = request.form.get('playlist-genre')
 
-            pUser = playlistInfo["user_name"]
+            pUser = playlistInfo["display_name"]
             pid = playlistInfo["playlist_id"]
 
             # Check if we are changing the name of the playlsit

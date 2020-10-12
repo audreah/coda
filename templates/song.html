@@ -15,7 +15,7 @@ and who added the song to the database. -->
     {{song.album_title}}</a></p>
 <p>Release Year: {{song.release_year}}</p>
 <p>Added by: <a href="{{url_for('user', uid=song.user_id)}}">
-    {{song.user_name}}</a></p>
+    {{song.display_name}}</a></p>
 
 <form method="POST" action="{{url_for('song', sid = sid)}}">
 

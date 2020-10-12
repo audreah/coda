@@ -34,7 +34,7 @@
     <ul>
         {% for user in users %}
             <li><a href="{{ url_for('user', uid=user.user_id) }}">
-		{{user.user_name}}</a></li>
+		{{user.display_name}}</a></li>
         {% endfor %}
     </ul>
 
