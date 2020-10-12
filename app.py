@@ -301,22 +301,33 @@ def song(sid):
 
     else: # song found
         if request.method == 'GET': #display playlist info
-            allPlaylists = playlist.get_all_playlists(conn)
+            username = session['CAS_USERNAME']
+            userPlaylists = playlist.get_all_playlists_by_user(conn,username) #only by that user
+            if len(userPlaylists) == 0: #if user has not created any playlists, link to create page
+                return render_template('song.html', 
+                    song=song_info, 
+                    sid = sid, playlists = False, loggedin = True,
+                    page_title='Song | ' + song_info['song_title'])
             return render_template('song.html', 
                 song=song_info, 
-                sid = sid, playlists = allPlaylists,
+                sid = sid, playlists = userPlaylists, loggedin = True,
                 page_title='Song | ' + song_info['song_title'])
-        else: #add song to playlist
-            pid = request.form.get("playlist-id")
-            currentSongs = playlist.get_playlist_songs(conn,pid)
-            currentSongIds = [elt['song_id'] for elt in currentSongs]
-            if sid in currentSongIds: #check if song exists in playlist already
-                flash(song_info['song_title'] + ' already exists in ' + 
-                    playlist.get_playlist_info(conn,pid)['playlist_name'])
-                return redirect(url_for('song',sid = sid))
+
+            
+        else: #forms to add song to a playlist, or create a playlist
+            if request.form.get('create-playlist'): 
+                return redirect(url_for('createPlaylist'))
             else:
-                playlist.addSongToPlaylist(conn,pid,sid)
-                return redirect(url_for('playlistPage', pid = pid))
+                pid = request.form.get("playlist-id")
+                currentSongs = playlist.get_playlist_songs(conn,pid)
+                currentSongIds = [elt['song_id'] for elt in currentSongs]
+                if sid in currentSongIds: #check if song exists in playlist already
+                    flash(song_info['song_title'] + ' already exists in ' + 
+                        playlist.get_playlist_info(conn,pid)['playlist_name'])
+                    return redirect(url_for('song',sid = sid))
+                else:
+                    playlist.addSongToPlaylist(conn,pid,sid)
+                    return redirect(url_for('playlistPage', pid = pid))
 
 @app.route('/playlist/create', methods = ['GET','POST'])
 def createPlaylist():
