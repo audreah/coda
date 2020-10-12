@@ -43,7 +43,11 @@ app.config['CAS_AFTER_LOGOUT'] = 'after_logout'
 @app.route('/logged_in/')
 def logged_in():
     """ Redirects to the explore page if logged in. """
-    flash('successfully logged in!')
+    conn = dbi.connect()
+    username = session['CAS_USERNAME']
+    # if user does not yet exist in database
+    if (userpage.check_username(conn, username)):
+        userpage.add_user(conn, username)
     return redirect( url_for('explore') )
 
 @app.route('/')
@@ -193,22 +197,12 @@ def user(uid):
         is_logged_in = True
         username = session['CAS_USERNAME']
         conn = dbi.connect()
-        # if user does not exist in database
-        if (userpage.check_username(conn, username)):
-            userpage.add_user(conn, username)
-            user = userpage.get_username(conn, username)
-            friendsList = userpage.get_friends(conn, uid)
-            playlists = userpage.get_user_playlists(conn, uid)
-            return render_template("user.html", user= user, 
-                friendsList = friendsList, playlists = playlists)
-        # if user already in database
-        else:    
-            user = userpage.get_user_id(conn, uid)
-            friendsList = userpage.get_friends(conn, uid)
-            playlists = userpage.get_user_playlists(conn, uid)
-
-            return render_template("user.html", user= user, 
-                friendsList = friendsList, playlists = playlists)
+ 
+        user = userpage.get_user_id(conn, uid)
+        friendsList = userpage.get_friends(conn, uid)
+        playlists = userpage.get_user_playlists(conn, uid)
+        return render_template("user.html", user= user, 
+            friendsList = friendsList, playlists = playlists)
     else:
         flash('Please Log In to Access Profile Page')
         return redirect(url_for("explore"))
