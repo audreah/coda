@@ -22,17 +22,17 @@
               
 
  <div class="topnav">
-    <ul>
-      <li><a href = "{{ url_for('explore') }}">Explore</a></li>
 
-      <li><a href = "{{ url_for('addSongs') }}">Add Song</a></li>
+      <div class="explore"><a href = "{{ url_for('explore') }}">Explore</a></div>
+
+      <div class="addSongs"><a href = "{{ url_for('addSongs') }}">Add Song</a></div>
       
-      <li><form class="search" method="GET" action= "{{ url_for('query') }}">
+      <div class="searchbar"><form class="search" method="GET" action= "{{ url_for('query') }}">
         <p><label>Search: <input type="text" name="searchbar"></label>
-        <input type="submit" value="search"></p>
-      </form></li>
+        <input class = "button" type="submit" value="search"></p>
+      </form></div>
 
-      <li>
+      <div class="session">
         
         {% if session.CAS_USERNAME %}
 
@@ -43,12 +43,11 @@
         {% else %}
         
           <form method="GET" action="{{url_for('cas.login')}}">
-            <button>login</button>
+            <button class="button">login</button>
           </form>
         
         {% endif %} 
-        </li>
-    </ul>
+        </div>
   </div>
 
 {% block main_content %}

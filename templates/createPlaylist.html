@@ -15,11 +15,11 @@
         <td><input type="playlist-genre" name="playlist-genre" id="playlist-genre"></td></tr>
     <!-- created by will be removed once we have authentication -->
     <tr><td><label for="playlist-user">Created by (id):</label></td>
-        <td><input type="playlist-user" name="playlist-user" id="playlist-user"></td></tr>
+        <td>{{ session.CAS_USERNAME }}</td></tr>
     </table>
     </fieldset>
 
-    <br> <input class = 'button' type='submit' value='create'>
+    <br> <input class = 'create' type='submit' value='create'>
 
 </form>
 

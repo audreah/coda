@@ -8,7 +8,7 @@ import cs304dbi as dbi;
 
 def search_user(conn, text):
     """
-    Searches in database where the user name is similar to input text.
+    Searches in database where the user display name is similar to input text.
 
     :param conn: connection to database
     :param text: user input text from search bar
@@ -17,6 +17,53 @@ def search_user(conn, text):
     curs.execute('''select * from coda_user where display_name like %s''', 
                     ['%' + text + '%'])
     return curs.fetchall()
+
+def get_username_from_uid(conn, user_id):
+    '''
+    Retrieves user information where the username is specific to CAS log in.
+    :param conn: connection to database
+    :param username: CAS log in user name (wellesley user name)
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select * from coda_user where user_id = %s''', [user_id])
+    return curs.fetchone()
+
+def get_username(conn, username):
+    '''
+    Retrieves user information where the username is specific to CAS log in.
+    :param conn: connection to database
+    :param username: CAS log in user name (wellesley user name)
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select * from coda_user where username = %s''', [username])
+    return curs.fetchone()
+
+def check_username(conn, username):
+    '''
+    Checks if user with username exist in our database.
+    :param conn: connection to databases
+    :param username: CAS log in usesr name
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select count(username) from coda_user where username = %s''', [username])
+    result = curs.fetchone()
+    # returns true if username does not exist in database
+    if result['count(username)'] == 0:
+        return True
+    else:
+        return False
+
+def add_user(conn, username):
+    '''
+    Add user if user is not in our coda database. 
+    Display name will automatically same as username when first logged in, can change later.
+    :param comm: connection to database
+    :param username: CAS log in user name (wellesley user name)
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''insert into coda_user(username, display_name) values (%s, %s)''', 
+    [username, username])
+    conn.commit()
 
 def get_user_id(conn, user_id):
     """
@@ -102,13 +149,14 @@ def add_album(conn, album_title, artist_name):
         [album_title, artist_name])
     conn.commit()
 
-def add_song(conn, song_title, genre, album_title):
+def add_song(conn, song_title, genre, album_title, added_by):
     ''' When session/log in is working add user_id '''
     curs = dbi.dict_cursor(conn)
-    curs.execute('''insert into coda_song(song_title,genre,album_id)
+    curs.execute('''insert into coda_song(song_title,genre,album_id, added_by)
     values (%s, %s, 
-    (select album_id from coda_album where album_title = %s))''',
-    [song_title, genre, album_title])
+    (select album_id from coda_album where album_title = %s),
+    (select user_id from coda_user where username = %s))''',
+    [song_title, genre, album_title, added_by])
     conn.commit()
 
 def get_artistId(conn, artist_name):
@@ -125,34 +173,37 @@ def get_artistId(conn, artist_name):
 
 def check_artist(conn, artist_name):
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select * from coda_artist where artist_name = %s''', 
+    curs.execute('''select count(artist_id) from coda_artist where artist_name = %s''', 
         [artist_name])
     result = curs.fetchone()
-    if result == 0:
+    if result['count(artist_id)'] == 0:
         '''returns true if no artist with the name exist in database'''
         return True
-    return False
+    else:
+        return False
 
 def check_song(conn, song_title, album_name):
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select song_id from coda_song where song_title = %s 
+    curs.execute('''select count(song_id) from coda_song where song_title = %s 
         and album_id = 
-        (select album_id from coda_album where album_title = %s))''',
+        (select album_id from coda_album where album_title = %s)''',
         [song_title, album_name])
     result = curs.fetchone()
-    if result == 0:
+    if result['count(song_id)'] == 0:
         '''returns true if song does not already exist in database'''
         return True
-    return False
+    else:
+        return False
 
 def check_album(conn, album_title, artist_name):
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select album_id from coda_album where album_title = %s 
+    curs.execute('''select count(album_id) from coda_album where album_title = %s 
         and artist_id = 
         (select artist_id from coda_artist where artist_name = %s)''',
         [album_title, artist_name])
     result = curs.fetchone()
-    if result == 0:
+    if result['count(album_id)'] == 0:
         '''returns true if album does not exist in database'''
         return True
-    return False
+    else:
+        return False

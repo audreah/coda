@@ -1,13 +1,20 @@
 {% extends "base.html" %} 
 
 {% block main_content %}
-<div class="user">
-<h1>{{user.display_name}}</h1>
-<button type="button" class = "button" onclick="window.location.href= 
-    '{{ url_for('editUsername', uid = user.user_id) }}';">Edit User
-</button>
-<br>
+<div class="displayUser">
+    <div class = "displayName">
+        <h1>{{user.display_name}}</h1>
+    </div>
+    <div class = "editUser">
+        {% if session.CAS_USERNAME == user.username %}
+            <button type="button" class = "button" onclick="window.location.href= 
+                 '{{ url_for('editUsername', uid = user.user_id) }}';">Edit User</button>
+        {% else %}
+            <button type="button" class = "button">Follow</button>
+        {% endif %} 
+    </div>
 </div>
+<br>
 
 <div class="tab">
     <button class="tablinks" onclick="displayTab(event, 'Friends')" 
@@ -49,8 +56,10 @@
 
 </ol> 
     <br>
-    <button type="button" class="button" onclick="window.location.href= 
-        '{{ url_for('createPlaylist') }}';">Create New Playlist</button>
+    {% if session.CAS_USERNAME == user.username %}
+        <button type="button" class="button" onclick="window.location.href= 
+            '{{ url_for('createPlaylist') }}';">Create New Playlist</button>
+    {% endif %}
 </div>
 <script>
     function displayTab(evt, tab) {

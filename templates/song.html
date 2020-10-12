@@ -21,12 +21,12 @@ and who added the song to the database. -->
 
         {% if not playlists %}
             <p>You have not yet created a playlist, click here to create one</p>
-                <button name = 'create-playlist' value = True>Create Playlist</button>
+                <button class= "create" name = 'create-playlist' value = True>Create Playlist</button>
         {% else %}
             <p>Add this song to a playlist below:</p> 
             {% for playlist in playlists %}
                 <li>
-                    <button class = "button" type="submit" name="playlist-id" value="{{playlist.playlist_id}}">
+                    <button class = "playlist" type="submit" name="playlist-id" value="{{playlist.playlist_id}}">
                     {{playlist.playlist_name}}
                     </button>
                 </li>
