@@ -201,7 +201,6 @@ def user(uid):
         user = userpage.get_user_id(conn, uid)
         friendsList = userpage.get_friends(conn, uid)
         playlists = userpage.get_user_playlists(conn, uid)
-
         return render_template("user.html", user= user, 
             friendsList = friendsList, playlists = playlists)
     else:
