@@ -313,7 +313,6 @@ def song(sid):
                 sid = sid, playlists = userPlaylists, loggedin = True,
                 page_title='Song | ' + song_info['song_title'])
 
-            
         else: #forms to add song to a playlist, or create a playlist
             if request.form.get('create-playlist'): 
                 return redirect(url_for('createPlaylist'))
