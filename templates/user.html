@@ -86,8 +86,6 @@
     $('#follow-button').on('click', function(evt) {
         var friend = $(this).attr('data-friend');
         var currentUser = $(this).attr('data-current');
-        console.log('friend: ' + friend);
-        console.log('currentUser: ' + currentUser);
         var url = '/user/' + friend;
         $.post(url, {'friend': friend, 'currentUser': currentUser}, updateFriends);
     });
