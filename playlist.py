@@ -154,14 +154,40 @@ def playlists_by_genre(conn, genre):
     return genreDictList
 
 '''
-(temporary) Get all the playlists in the db so we can add songs to them.
+Get all the playlists by a user that contain a specific song
 
 :param conn: connection to db
-:returns: the names and ids of all playlists
+:param uid: a user id
+:param sid: a song id
+:returns: the playlists that contain a song by that user 
 '''
-def get_playlists(conn):
+def get_playlists_with_song(conn,uid,sid):
     curs = dbi.dict_cursor(conn)
-    curs.execute('select playlist_id, playlist_name from coda_playlist')
+    sql = ('''select playlist_id, playlist_name from coda_playlist 
+                    inner join coda_playlist_songs 
+                    using (playlist_id) 
+                    where created_by = %s and song_id = %s''')
+    curs.execute(sql,[uid,sid])
     playlistDictList = curs.fetchall()
     return playlistDictList
 
+'''
+Get all the playlists by a user that don't contain a specific song
+
+:param conn: connection to db
+:param uid: a user id
+:param sid: a song id
+:returns: the playlists that contain a song by that user 
+'''
+def get_playlists_without_song(conn,uid,sid):
+    curs = dbi.dict_cursor(conn)
+    sql = ('''select playlist_id, playlist_name
+            from coda_playlist
+            where created_by = %s 
+            and playlist_id not in (
+                select playlist_id
+                from coda_playlist_songs
+                where song_id = %s);''')
+    curs.execute(sql,[uid,sid])
+    playlistDictList = curs.fetchall()
+    return playlistDictList

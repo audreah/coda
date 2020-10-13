@@ -186,26 +186,37 @@ def playlistPage(pid):
                             page_title=playlistInfo['playlist_name'],
                             createdby = createdby)
 
-@app.route('/user/<int:uid>')
+@app.route('/user/<int:uid>', methods=["GET", "POST"])
 def user(uid):
     '''
     Displays a user's name, friends, and playlists.
     :param uid: unique id for a user
     :returns: the user's profile page
     '''
-    if 'CAS_USERNAME' in session:
-        is_logged_in = True
-        username = session['CAS_USERNAME']
-        conn = dbi.connect()
- 
-        user = userpage.get_user_id(conn, uid)
-        friendsList = userpage.get_friends(conn, uid)
-        playlists = userpage.get_user_playlists(conn, uid)
-        return render_template("user.html", user= user, 
-            friendsList = friendsList, playlists = playlists)
+    conn = dbi.connect()
+    if (request.method == 'GET'):
+        if 'CAS_USERNAME' in session:
+            is_logged_in = True
+            username = session['CAS_USERNAME']
+    
+            user = userpage.get_user_id(conn, uid)
+            loggedInUser = userpage.get_username(conn,username)
+            friendsList = userpage.get_friends(conn, uid)
+            playlists = userpage.get_user_playlists(conn, uid)
+            return render_template("user.html", user= user, 
+                loggedInUser=loggedInUser,
+                friendsList = friendsList, playlists = playlists)
+        else:
+            flash('Please Log In to Access Profile Page')
+            return redirect(url_for("explore"))
     else:
-        flash('Please Log In to Access Profile Page')
-        return redirect(url_for("explore"))
+        friendId = request.form.get('friend')
+        currentUser = request.form.get('currentUser')
+        print(friendId)
+        print(currentUser)
+        userpage.add_follow(conn,friendId,currentUser)
+        currentInfo = userpage.get_user_id(conn,currentUser)
+        return jsonify({'currentUser':currentInfo['display_name']})
 
 @app.route('/user/<int:uid>/edit/', methods=["GET", "POST"])
 def editUsername(uid):
@@ -323,7 +334,6 @@ def song(sid):
     '''
     conn = dbi.connect()
     song_info = songPage.get_song(conn, sid)
-    playlists = playlist.get_playlists(conn)
 
     if song_info == None: # song not found
         return render_template('notFound.html',
@@ -333,18 +343,22 @@ def song(sid):
         if 'CAS_USERNAME' in session:
             is_logged_in = True
             username = session['CAS_USERNAME']
+            userPlaylists = playlist.get_all_playlists_by_user(conn,username)
             if request.method == 'GET': #display playlist info
-                userPlaylists = playlist.get_all_playlists_by_user(conn,username) #only by that user
-                print(userPlaylists)
                 if len(userPlaylists) == 0: #if user has not created any playlists, link to create page
                     return render_template('song.html', 
                         song=song_info, 
                         sid = sid, playlists = False, loggedin = True,
                         page_title='Song | ' + song_info['song_title'])
-                return render_template('song.html', 
-                    song=song_info, 
-                    sid = sid, playlists = userPlaylists, loggedin = True,
-                    page_title='Song | ' + song_info['song_title'])
+                else: #separate the playlists the song is in and the playlists it's not in
+                    uid = userpage.get_username(conn,username)['user_id']
+                    pAlreadyIn = playlist.get_playlists_with_song(conn,uid,sid)
+                    pNotIn = playlist.get_playlists_without_song(conn,uid,sid)
+                    return render_template('song.html', 
+                        song=song_info, 
+                        sid = sid, playlists = True, loggedin = True,
+                        pAlreadyIn = pAlreadyIn, pNotIn = pNotIn,
+                        page_title='Song | ' + song_info['song_title'])
                 
             else: #forms to add song to a playlist, or create a playlist
                 if request.form.get('create-playlist'): 
