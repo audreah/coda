@@ -100,11 +100,15 @@ def explore():
         genres += [oneGenre.strip().lower() 
             for oneGenre in re.split('\||,', genre)
             if oneGenre.strip().lower() not in genres]
-    return render_template('main.html',page_title='Home',genres=sorted(genres),
+    if 'CAS_USERNAME' in session:
+        is_logged_in = True
+        return render_template('main.html',page_title='Home',genres=sorted(genres),
                            username=username,
                            is_logged_in=is_logged_in,
                            cas_attributes=session.get('CAS_ATTRIBUTES'),
                            user_id=uid)
+    else:
+        return render_template('login.html')
 
 @app.route('/playlist/<int:pid>', methods=["GET", "POST"]) 
 def playlistPage(pid):
@@ -157,6 +161,7 @@ def playlistPage(pid):
                     flash(newName + '  was updated successfully')
                         
                     return render_template('playlist.html', 
+                                createdby = createdby,
                                 playlistInfo=playlistInfo, 
                                 songs=nestedSongs, 
                                 page_title=playlistInfo['playlist_name'],
@@ -169,6 +174,7 @@ def playlistPage(pid):
                         flash(newName + '  was updated successfully')
                         
                         return render_template('playlist.html', 
+                                createdby = createdby,
                                 playlistInfo=playlistInfo, 
                                 songs=nestedSongs, 
                                 page_title=playlistInfo['playlist_name'],
@@ -177,6 +183,7 @@ def playlistPage(pid):
                         flash('Error: A playlist with this name already exists')
 
                         return render_template('playlist.html', 
+                                createdby = createdby,
                                 playlistInfo=playlistInfo, 
                                 songs=nestedSongs, 
                                 page_title=playlistInfo['playlist_name'],
@@ -206,7 +213,6 @@ def user(uid):
         if 'CAS_USERNAME' in session:
             is_logged_in = True
             username = session['CAS_USERNAME']
-    
             user = userpage.get_user_from_id(conn, uid)
             loggedInUser = userpage.get_userid_from_username(conn,username)
             friendsList = userpage.get_friends(conn, uid)
@@ -223,10 +229,8 @@ def user(uid):
     else:
         friendId = request.form.get('friend')
         currentUser = request.form.get('currentUser')
-        print(friendId)
-        print(currentUser)
         userpage.add_follow(conn,friendId,currentUser)
-        currentInfo = userpage.get_user_id(conn,currentUser)
+        currentInfo = userpage.get_user_from_id(conn,currentUser)
         return jsonify({'currentUser':currentInfo['display_name']})
 
 @app.route('/user/<int:uid>/edit/', methods=["GET", "POST"])
@@ -372,7 +376,7 @@ def song(sid):
                         user_id=user_id)
                         
                 else: #separate the playlists the song is in and the playlists it's not in
-                    uid = userpage.get_username(conn,username)['user_id']
+                    uid = userpage.get_userid_from_username(conn,username)
                     pAlreadyIn = playlist.get_playlists_with_song(conn,uid,sid)
                     pNotIn = playlist.get_playlists_without_song(conn,uid,sid)
                     return render_template('song.html', 
