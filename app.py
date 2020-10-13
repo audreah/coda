@@ -212,8 +212,6 @@ def user(uid):
     else:
         friendId = request.form.get('friend')
         currentUser = request.form.get('currentUser')
-        print(friendId)
-        print(currentUser)
         userpage.add_follow(conn,friendId,currentUser)
         currentInfo = userpage.get_user_id(conn,currentUser)
         return jsonify({'currentUser':currentInfo['display_name']})
@@ -256,7 +254,6 @@ def addSongs():
                 userpage.add_artist(conn, artistName)
                 userpage.add_album(conn, albumName, artistName)
                 userpage.add_song(conn, songName, genre, albumName, username)
-                print(artistName)
                 flash(songName + ' has been added to coda database!')
                 return redirect(url_for("addSongs"))
             #artist already in database
