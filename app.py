@@ -53,7 +53,7 @@ def logged_in():
 @app.route('/')
 def index():
     """ Prompts the user to login. """
-    return render_template('login.html')
+    return render_template('login.html', page_title='login to coda')
 
 @app.route('/after_logout/')
 def after_logout():
@@ -98,7 +98,7 @@ def explore():
         genres += [oneGenre.strip().lower() 
             for oneGenre in re.split('\||,', genre)
             if oneGenre.strip().lower() not in genres]
-    return render_template('main.html',title='Home',genres=sorted(genres),
+    return render_template('main.html',page_title='Home',genres=sorted(genres),
                            username=username,
                            is_logged_in=is_logged_in,
                            cas_attributes = session.get('CAS_ATTRIBUTES'))
@@ -201,8 +201,8 @@ def user(uid):
         user = userpage.get_user_id(conn, uid)
         friendsList = userpage.get_friends(conn, uid)
         playlists = userpage.get_user_playlists(conn, uid)
-        return render_template("user.html", user= user, 
-            friendsList = friendsList, playlists = playlists)
+        return render_template("user.html", page_title = user['display_name'],
+            user = user, friendsList = friendsList, playlists = playlists)
     else:
         flash('Please Log In to Access Profile Page')
         return redirect(url_for("explore"))
@@ -215,7 +215,7 @@ def editUsername(uid):
     '''
     conn = dbi.connect()
     if request.method == 'GET':
-        return render_template('editUsername.html')
+        return render_template('editUsername.html', page_title='Edit Username')
     else:
         newName = request.form.get('user-name')
         userpage.update_username(conn, uid, newName)
@@ -232,7 +232,7 @@ def addSongs():
         is_logged_in = True
         
         if request.method == 'GET':
-            return render_template('addSongs.html')
+            return render_template('addSongs.html', page_title="Add Song")
         else:
             artistName = request.form.get('artist-name')
             albumName = request.form.get('album-name')
@@ -283,7 +283,7 @@ def artist(aid):
     artist = artistPage.get_artist(conn, aid)
     albumList = artistPage.get_artist_albums(conn, aid)
     return (render_template("artist.html", artist = artist, 
-        albumList = albumList))
+        albumList = albumList, page_title = artist['artist_name']))
 
 @app.route('/album/<int:aid>', methods=["GET", "POST"])
 def album(aid):
@@ -377,7 +377,8 @@ def createPlaylist():
         is_logged_in = True
         username = session['CAS_USERNAME']
         if request.method == 'GET':
-            return render_template('createPlaylist.html')
+            return render_template('createPlaylist.html', 
+                page_title="Create Playlist")
                                     
         else: #inserting movie action, making sure input is valid
             pName = request.form.get('playlist-name')
@@ -454,21 +455,22 @@ def query():
     # one user matches
     elif (len(userMatches) == 1 and not songMatches and not albumMatches 
         and not playlistMatches and not artistMatches):
-        return render_template("search.html", users = userMatches)
+        return render_template("user.html", user = userMatches[0],
+            page_title = userMatches[0]['display_name'])
 
     # one playlist matches
     elif (len(playlistMatches) == 1 and not songMatches and not artistMatches
         and not albumMatches and not playlistMatches):
-        return render_template("playlist.html", 
-            playlistInfo=playlistMatches)
+        return render_template("playlist.html", playlistInfo=playlistMatches,
+            page_title = playlistMatches['playlist_name'])
 
     # one artist matches
     elif (len(artistMatches) == 1 and not songMatches and not userMatches
         and not albumMatches and not playlistMatches):
         artist = artistMatches[0]
         artistAlbums = artistPage.get_artist_albums(conn, artist['artist_id'])
-        return render_template("artist.html", 
-            artist=artist, albumList=artistAlbums)
+        return render_template("artist.html", artist=artist, 
+            albumList=artistAlbums, page_title=artist['artist_name'])
 
     # multiple matches
     else:
