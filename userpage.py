@@ -10,44 +10,58 @@ def search_user(conn, text):
     """
     Searches in database where the user display name is similar to input text.
 
-    :param conn: connection to database
-    :param text: user input text from search bar
+    Parameters
+    ----------
+    conn: connection to database
+    text, string
+        user input text from search bar
+    
+    Returns
+    -------
+    A list of dictionaries containing user information for display names
+    similar to the user's query
     """
     curs = dbi.dict_cursor(conn)
     curs.execute('''select * from coda_user where display_name like %s''', 
                     ['%' + text + '%'])
     return curs.fetchall()
 
-def get_username_from_uid(conn, user_id):
+def get_user_from_id(conn, user_id):
     '''
-    Retrieves user information where the username is specific to CAS log in.
+    Retrieves user information given an id.
     :param conn: connection to database
-    :param username: CAS log in user name (wellesley user name)
+    :param user_id: int | unique id for user
+    :returns: a dictionary with that user's information
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''select * from coda_user where user_id = %s''', [user_id])
     return curs.fetchone()
 
-def get_username(conn, username):
+def get_userid_from_username(conn, username):
     '''
-    Retrieves user information where the username is specific to CAS log in.
+    Retrieves user id where the username is specific to CAS log in.
     :param conn: connection to database
-    :param username: CAS log in user name (wellesley user name)
+    :param username: str | CAS log in user name (wellesley user name)
+    :returns: int | user id
     '''
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select * from coda_user where username = %s''', [username])
-    return curs.fetchone()
+    curs.execute('''select user_id from coda_user where username = %s''', 
+        [username])
+    return curs.fetchone()['user_id']
 
 def check_username(conn, username):
     '''
     Checks if user with username exist in our database.
     :param conn: connection to databases
-    :param username: CAS log in usesr name
+    :param username: str | CAS login username
+    :returns:
+        True if the indicated username does not exist in the database
+        False if the indicated username exists
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''select count(username) from coda_user where username = %s''', [username])
     result = curs.fetchone()
-    # returns true if username does not exist in database
+
     if result['count(username)'] == 0:
         return True
     else:
@@ -58,34 +72,25 @@ def add_user(conn, username):
     Add user if user is not in our coda database. 
     Display name will automatically same as username when first logged in, can change later.
     :param comm: connection to database
-    :param username: CAS log in user name (wellesley user name)
+    :param username: str | CAS login user name (wellesley user name)
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''insert into coda_user(username, display_name) values (%s, %s)''', 
     [username, username])
     conn.commit()
 
-def get_user_id(conn, user_id):
-    """
-    Retrieves information of a user given their unique user id.
-
-    :param conn: connection to database
-    :param user_id: integer representing unique user id
-    """
-    curs = dbi.dict_cursor(conn)
-    curs.execute('''select * from coda_user where user_id = %s''', [user_id])
-    return curs.fetchone()
-
 def get_friends(conn, user_id):
     """
     Retrieves users that a specific user is following on coda.
 
     :param conn: connection to database
-    :param user_id: integer representing unique user id
+    :param user_id: int | unique user id
+    returns: a list of dictionaries with information about the friend
     """
     curs = dbi.dict_cursor(conn)
     curs.execute('''select * from coda_user where user_id in
-    (select friend_two from coda_friend where friend_one = %s)''', [user_id])
+        (select friend_two from coda_friend where friend_one = %s)''', 
+        [user_id])
     return curs.fetchall()
 
 def get_user_playlists(conn, user_id):
@@ -94,9 +99,12 @@ def get_user_playlists(conn, user_id):
 
     :param conn: connection to database
     :param user_id: integer representing unique user id
+    :returns: a list of dictionaries with information for playlists 
+        created by the user
     """
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select * from coda_playlist where created_by = %s''', [user_id])
+    curs.execute('''select * from coda_playlist where created_by = %s''',
+        [user_id])
     return curs.fetchall()
 
 def get_playlist(conn, playlist_id):
@@ -105,9 +113,11 @@ def get_playlist(conn, playlist_id):
 
     :param conn: connection to database
     :param playlist_id: integer representing unique playlist id
+    :returns: a dictionary with the specified playlist information
     """
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select * from coda_playlist where playlist_id = %s''', [playlist_id])
+    curs.execute('''select * from coda_playlist where playlist_id = %s''',
+        [playlist_id])
     return curs.fetchone()
 
 def update_username(conn, user_id, newName):
@@ -120,7 +130,7 @@ def update_username(conn, user_id, newName):
     """
     curs = dbi.dict_cursor(conn)
     curs.execute('''update coda_user set display_name = %s 
-    where user_id = %s''', [newName, user_id])
+        where user_id = %s''', [newName, user_id])
     conn.commit()
 
 def add_artist(conn, artist_name):
@@ -153,10 +163,10 @@ def add_song(conn, song_title, genre, album_title, added_by):
     ''' When session/log in is working add user_id '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''insert into coda_song(song_title,genre,album_id, added_by)
-    values (%s, %s, 
-    (select album_id from coda_album where album_title = %s),
-    (select user_id from coda_user where username = %s))''',
-    [song_title, genre, album_title, added_by])
+        values (%s, %s, 
+        (select album_id from coda_album where album_title = %s),
+        (select user_id from coda_user where username = %s))''',
+        [song_title, genre, album_title, added_by])
     conn.commit()
 
 def get_artistId(conn, artist_name):
@@ -165,6 +175,7 @@ def get_artistId(conn, artist_name):
 
     :param conn: connection to database
     :param artist_name: text input of artist name
+    :returns: int | id of the specified artist
     """
     curs = dbi.dict_cursor(conn)
     curs.execute('''select artist_id from coda_artist where artist_name = %s''', 
