@@ -32,24 +32,25 @@
         <input class = "button" type="submit" value="search"></p>
       </form></div>
 
-      <div class="session">
+      
         
         {% if session.CAS_USERNAME %}
-
+        <div class="session">
           <form method="GET" action="{{url_for('cas.logout')}}">
             <button class="button">logout {{ session.CAS_USERNAME }}</button>
           </form>
+        </div> 
           
-          <div class="profilePage"><a href = "{{ url_for('user', uid = user_id ) }}">My Profile</a></div>
+        <div class="profilePage"><a href = "{{ url_for('user', uid = user_id ) }}" style = "text-decoration: none">My Profile</a></div>
           
         {% else %}
-        
+        <div class="session">
           <form method="GET" action="{{url_for('cas.login')}}">
             <button class="button">login</button>
           </form>
-        
-        {% endif %} 
         </div>
+        {% endif %} 
+        
   </div>
 
 {% block main_content %}
