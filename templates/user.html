@@ -10,7 +10,8 @@
             <button type="button" class = "button" onclick="window.location.href= 
                  '{{ url_for('editUsername', uid = user.user_id) }}';">Edit User</button>
         {% else %}
-            <button type="button" class = "button">Follow</button>
+                <button type="button" class = "button" id='follow-button' 
+                data-friend={{user.user_id}} data-current={{loggedInUser.user_id}}>Follow</button>
         {% endif %} 
     </div>
 </div>
@@ -24,7 +25,7 @@
 </div>
 
 <div id="Friends" class="tabcontent">
-<ol>
+<ol id = 'friendsList'>
     {% if friendsList|length %}
         {% for friend in friendsList %}
             <li>
@@ -61,6 +62,7 @@
             '{{ url_for('createPlaylist') }}';">Create New Playlist</button>
     {% endif %}
 </div>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js" ></script>
 <script>
     function displayTab(evt, tab) {
         var tabcontent;
@@ -80,5 +82,17 @@
     }
 
     document.getElementById("default").click();
+
+    $('#follow-button').on('click', function(evt) {
+        var friend = $(this).attr('data-friend');
+        var currentUser = $(this).attr('data-current');
+        var url = '/user/' + friend;
+        $.post(url, {'friend': friend, 'currentUser': currentUser}, updateFriends);
+    });
+
+    //helper function to update user page with friends
+    function updateFriends(resp) {
+        $('#follow-button').remove();
+    }
 </script>
 {% endblock %}

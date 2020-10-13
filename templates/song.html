@@ -20,17 +20,25 @@ and who added the song to the database. -->
 <form method="POST" action="{{url_for('song', sid = sid)}}">
 
         {% if not playlists %}
-            <p>You have not yet created a playlist, click here to create one</p>
+            <p>Create a playlist here</p>
                 <button class= "create" name = 'create-playlist' value = True>Create Playlist</button>
         {% else %}
+            <p>This song already exists in these playlists of yours:</p>
+            {% for playlist in pAlreadyIn %}
+                <li>
+                    <p><a href="{{url_for('playlistPage', pid=playlist.playlist_id)}}">{{playlist.playlist_name}}</a></p>
+                </li>
+            {% endfor %}
             <p>Add this song to a playlist below:</p> 
-            {% for playlist in playlists %}
+            {% for playlist in pNotIn %}
                 <li>
                     <button class = "playlist" type="submit" name="playlist-id" value="{{playlist.playlist_id}}">
                     {{playlist.playlist_name}}
                     </button>
                 </li>
             {% endfor %}
+            <p>Create another playlist here</p>
+                <button class= "create" name = 'create-playlist' value = True>Create Playlist</button>
         {% endif %}
 
 </form>

@@ -207,3 +207,17 @@ def check_album(conn, album_title, artist_name):
         return True
     else:
         return False
+
+def add_follow(conn,friendId,currentId):
+    '''
+    Allows the current user to follow another user
+
+    :param conn: connection to database
+    :param friendId: the uid of the person to be followed
+    :param currentId: the uid of the person doing the following
+    '''
+    curs = dbi.dict_cursor(conn)
+    sql = '''insert into coda_friend (friend_one,friend_two)
+            values (%s,%s)'''
+    curs.execute(sql,[currentId,friendId])
+    conn.commit()
