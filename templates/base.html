@@ -40,6 +40,8 @@
             <button class="button">logout {{ session.CAS_USERNAME }}</button>
           </form>
           
+          <div class="profilePage"><a href = "{{ url_for('user', uid = user_id ) }}">My Profile</a></div>
+          
         {% else %}
         
           <form method="GET" action="{{url_for('cas.login')}}">
