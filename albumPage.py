@@ -1,6 +1,6 @@
 '''
 Authors: Audrea Huang
-Version: Fall T1 2020 | 30 Sept 2020
+Version: Fall T1 2020 | 13 Oct 2020
 '''
 
 import cs304dbi as dbi
