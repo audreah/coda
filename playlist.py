@@ -57,8 +57,8 @@ def get_similar_playlists(conn,query):
 
 def get_playlist_songs(conn,pid):
     """
-    Given a connection object and integer playlist id, gets the songs 
-    in that playlist
+    Given a connection object and integer playlist id, gets the song 
+    titles and ids in that playlist
     :param conn: connection to database
     :param pid: int | unique playlist id
     :returns: a list of dictionaries with titles and ids for all
@@ -71,6 +71,22 @@ def get_playlist_songs(conn,pid):
             where playlist_id = %s'''
     curs.execute(sql,[pid])
     return curs.fetchall()
+
+def get_playlist_song_ids(conn,pid):
+    """
+    Gets the song ids in a playlist to avoid moving data from the db.
+    :param conn: connection to database
+    :param pid: int | unique playlist id
+    :returns: a list of integers representing ids for all
+        songs in the specified playlist
+    """
+    curs = dbi.dict_cursor(conn)
+    sql = '''select song_id from coda_song 
+                inner join coda_playlist_songs using (song_id)
+            where playlist_id = %s'''
+    curs.execute(sql,[pid])
+    songs = curs.fetchall()
+    return [song['song_id'] for song in songs]
 
 def check_unique_playlist_name(conn, pName, uid):
     """
@@ -212,3 +228,4 @@ if __name__ == '__main__':
     dbi.cache_cnf()   # defaults to ~/.my.cnf
     dbi.use('coda_db')
     conn = dbi.connect()
+    print(get_playlist_song_ids(conn, 3))

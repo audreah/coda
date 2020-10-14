@@ -426,10 +426,9 @@ def song(sid):
                 else:
                     pid = request.form.get("playlist-id")
                     start_transaction(conn)
-                    currentSongs = playlist.get_playlist_songs(conn,pid)
-                    currentSongIds = [elt['song_id'] for elt in currentSongs]
+                    currentSongs = playlist.get_playlist_song_ids(conn,pid)
                     # check if song already exists in playlist
-                    if sid in currentSongIds: 
+                    if sid in currentSongs: 
                         flash(song_info['song_title'] + ' already exists in ' + 
                             playlist.get_playlist_info(conn,pid)['playlist_name'])
                         commit_transaction(conn)
