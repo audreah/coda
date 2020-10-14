@@ -59,24 +59,23 @@ def check_username(conn, username):
         False if the indicated username exists
     '''
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select count(username) from coda_user where username = %s''', [username])
+    curs.execute('''select count(username) from coda_user where username = %s''',
+        [username])
     result = curs.fetchone()
 
-    if result['count(username)'] == 0:
-        return True
-    else:
-        return False
+    return result['count(username)'] == 0
 
 def add_user(conn, username):
     '''
     Add user if user is not in our coda database. 
-    Display name will automatically same as username when first logged in, can change later.
+    At first, the display name will automatically be the same as the username,
+    but the user can change this later.
     :param comm: connection to database
     :param username: str | CAS login user name (wellesley user name)
     '''
     curs = dbi.dict_cursor(conn)
-    curs.execute('''insert into coda_user(username, display_name) values (%s, %s)''', 
-    [username, username])
+    curs.execute('''insert into coda_user(username, display_name) 
+        values (%s, %s)''', [username, username])
     conn.commit()
 
 def get_friends(conn, user_id):
@@ -85,7 +84,7 @@ def get_friends(conn, user_id):
 
     :param conn: connection to database
     :param user_id: int | unique user id
-    returns: a list of dictionaries with information about the friend
+    :returns: a list of dictionaries with information about the friend
     """
     curs = dbi.dict_cursor(conn)
     curs.execute('''select * from coda_user where user_id in
@@ -155,12 +154,22 @@ def add_album(conn, album_title, artist_name):
     """
     curs = dbi.dict_cursor(conn)
     curs.execute('''insert into coda_album(album_title,artist_id)
-    values (%s, (select artist_id from coda_artist where artist_name = %s))''', 
+        values (%s, (
+            select artist_id from coda_artist where artist_name = %s
+        ))''', 
         [album_title, artist_name])
     conn.commit()
 
 def add_song(conn, song_title, genre, album_title, added_by):
-    ''' When session/log in is working add user_id '''
+    ''' 
+    Adds a song to the database
+
+    :param conn: connection to db
+    :param song_title: str | title of the song to be added
+    :param genre: str | genre of the song to be added
+    :param album_title: str | title of the album in which this song appears
+    :param added_by: int | user id of the logged-in user
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''insert into coda_song(song_title,genre,album_id, added_by)
         values (%s, %s, 
@@ -178,46 +187,63 @@ def get_artistId(conn, artist_name):
     :returns: int | id of the specified artist
     """
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select artist_id from coda_artist where artist_name = %s''', 
+    curs.execute('select artist_id from coda_artist where artist_name = %s', 
         [artist_name])
     return curs.fetchone()
 
 def check_artist(conn, artist_name):
+    """
+    Checks if an artist exists in the database.
+
+    :param conn: connection to database
+    :param artist_name: str | artist's name
+    :returns: bool
+        True if no artist with the name exists in database
+        False if an artist with the name exists
+    """
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select count(artist_id) from coda_artist where artist_name = %s''', 
-        [artist_name])
+    curs.execute('''select count(artist_id) from coda_artist 
+        where artist_name = %s''', [artist_name])
     result = curs.fetchone()
-    if result['count(artist_id)'] == 0:
-        '''returns true if no artist with the name exist in database'''
-        return True
-    else:
-        return False
+    return result['count(artist_id)'] == 0
 
 def check_song(conn, song_title, album_name):
+    """
+    Checks if a song on the album exists in the database.
+
+    :param conn: connection to database
+    :param song_title: str | title of song
+    :param album_name: str | title of album where this song appears
+    :returns: bool
+        True if no song with the title exists in database
+        False if a song with the title exists
+    """
     curs = dbi.dict_cursor(conn)
     curs.execute('''select count(song_id) from coda_song where song_title = %s 
         and album_id = 
         (select album_id from coda_album where album_title = %s)''',
         [song_title, album_name])
     result = curs.fetchone()
-    if result['count(song_id)'] == 0:
-        '''returns true if song does not already exist in database'''
-        return True
-    else:
-        return False
+    return result['count(song_id)'] == 0
 
 def check_album(conn, album_title, artist_name):
+    """
+    Checks if an album by the artist exists in the database.
+
+    :param conn: connection to database
+    :param album_title: str | title of album
+    :param artist_name: str | name of artist who released the album
+    :returns: bool
+        True if no album with the title exists in database
+        False if an album with the title exists
+    """
     curs = dbi.dict_cursor(conn)
     curs.execute('''select count(album_id) from coda_album where album_title = %s 
         and artist_id = 
         (select artist_id from coda_artist where artist_name = %s)''',
         [album_title, artist_name])
     result = curs.fetchone()
-    if result['count(album_id)'] == 0:
-        '''returns true if album does not exist in database'''
-        return True
-    else:
-        return False
+    return result['count(album_id)'] == 0
 
 def add_follow(conn,friendId,currentId):
     '''
@@ -232,3 +258,4 @@ def add_follow(conn,friendId,currentId):
             values (%s,%s)'''
     curs.execute(sql,[currentId,friendId])
     conn.commit()
+    

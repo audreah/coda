@@ -1,5 +1,5 @@
 '''
-Authors: Danya Gao, Audrea Huang
+Authors: Danya Gao, Audrea Huang, Liz Huang
 Gets information about playlists from the coda_db database
 '''
 
@@ -26,12 +26,16 @@ def get_playlist_info(conn,pid):
 
 def get_all_playlists_by_user(conn,username):
     """
-    Given a connection object and a uid, return all playlists in the database created by 
-    that user
+    Given a connection object and a uid, returns all playlists in the 
+    database created by that user
+    :param conn: database connection
+    :param username: str | account username
+    :returns: list of dictionaries with information for that user's playlists
     """
     curs = dbi.dict_cursor(conn)
     sql = '''select * from coda_playlist
-            where created_by = (select user_id from coda_user where username = %s)'''
+            where created_by = (
+                select user_id from coda_user where username = %s)'''
     curs.execute(sql,[username])
     return curs.fetchall()
 
@@ -41,7 +45,9 @@ def get_similar_playlists(conn,query):
     if the query does not return one direct result.
 
     :param conn: connection to database
-    :param query: string indicating playlist name that the user specifies     
+    :param query: string indicating playlist name that the user specifies
+    :returns: a list of dictionaries containing the ids and names
+        for all playlists similar to the user's query     
     """
     curs = dbi.dict_cursor(conn)                                              
     userInput = '%' + query + '%'
@@ -53,6 +59,10 @@ def get_playlist_songs(conn,pid):
     """
     Given a connection object and integer playlist id, gets the songs 
     in that playlist
+    :param conn: connection to database
+    :param pid: int | unique playlist id
+    :returns: a list of dictionaries with titles and ids for all
+        songs in the specified playlist
     """
     curs = dbi.dict_cursor(conn)
     sql = '''select song_title, song_id 
@@ -99,7 +109,7 @@ def updatePlaylist(conn,pid,newName,newGenre):
     curs.execute(sql,[newName,newGenre,pid])
     conn.commit()
 
-def createPlaylist(conn,name,genre,user):
+def createPlaylist(conn,name,genre,user_id):
     """
     Given a connection object, a playlist name, genre,
     and a user id, create a playlist
@@ -107,13 +117,13 @@ def createPlaylist(conn,name,genre,user):
     :param conn: database connection
     :param name: string with playlist name
     :param genre: string with genre name
-    :param user: CAS session user name
+    :param user_id: id corresponding to CAS username
     """
     curs = dbi.cursor(conn)
     sql = '''insert into coda_playlist
              (playlist_name,playlist_genre,created_by)
              values (%s,%s,%s)'''
-    curs.execute(sql,[name,genre,user])
+    curs.execute(sql,[name,genre,user_id])
     conn.commit()
 
 def deletePlaylist(conn,pid):
@@ -148,9 +158,10 @@ def addSongToPlaylist(conn,pid,sid):
 def playlists_by_genre(conn, genre):
     """  
     Gets all the playlists of a given genre to organize the explore page.
-    :param genre: one genre of interest
     :param conn: connection to database
-    :returns: all the song ids grouped by genre
+    :param genre: one genre of interest
+    :returns: list of dictionaries with ids and names of all playlists
+        for that genre
     """
     curs = dbi.dict_cursor(conn)
     curs.execute('''select playlist_id, playlist_name from coda_playlist
@@ -158,15 +169,15 @@ def playlists_by_genre(conn, genre):
     genreDictList = curs.fetchall()
     return genreDictList
 
-'''
-Get all the playlists by a user that contain a specific song
-
-:param conn: connection to db
-:param uid: a user id
-:param sid: a song id
-:returns: the playlists that contain a song by that user 
-'''
 def get_playlists_with_song(conn,uid,sid):
+    '''
+    Get all the playlists by a user that contain a specific song
+
+    :param conn: connection to db
+    :param uid: a user id
+    :param sid: a song id
+    :returns: the user's playlists that contain a song 
+    '''
     curs = dbi.dict_cursor(conn)
     sql = ('''select playlist_id, playlist_name from coda_playlist 
                     inner join coda_playlist_songs 
@@ -176,15 +187,15 @@ def get_playlists_with_song(conn,uid,sid):
     playlistDictList = curs.fetchall()
     return playlistDictList
 
-'''
-Get all the playlists by a user that don't contain a specific song
-
-:param conn: connection to db
-:param uid: a user id
-:param sid: a song id
-:returns: the playlists that contain a song by that user 
-'''
 def get_playlists_without_song(conn,uid,sid):
+    '''
+    Get all the playlists by a user that don't contain a specific song
+
+    :param conn: connection to db
+    :param uid: a user id
+    :param sid: a song id
+    :returns: the user's playlists that don't contain a song 
+    '''
     curs = dbi.dict_cursor(conn)
     sql = ('''select playlist_id, playlist_name
             from coda_playlist
@@ -201,4 +212,3 @@ if __name__ == '__main__':
     dbi.cache_cnf()   # defaults to ~/.my.cnf
     dbi.use('coda_db')
     conn = dbi.connect()
-    
