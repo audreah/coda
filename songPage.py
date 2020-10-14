@@ -4,6 +4,7 @@ Version: Fall T1 2020 | 30 Sept 2020
 '''
 
 import cs304dbi as dbi
+import re
 
 # ==========================================================
 # The functions that do most of the work.
@@ -51,7 +52,18 @@ def get_genres(conn):
     curs.execute('''select distinct genre from coda_song union (
             select distinct playlist_genre from coda_playlist)''')
     genreDictList = curs.fetchall()
-    return [genreDict['genre'] for genreDict in genreDictList]
+    genresDB = [genreDict['genre'] for genreDict in genreDictList]
+
+    # collect distinct genre names
+    genres = []
+    for genre in genresDB:
+        # some songs/playlists have multiple genres, separated by | or ,
+        # separate genres and strip any leading/trailing whitespace
+        genres += [oneGenre.strip().lower() 
+            for oneGenre in re.split('\||,', genre)
+            if oneGenre.strip().lower() not in genres]
+
+    return sorted(genres)
 
 def songs_by_genre(conn, genre):
     '''
