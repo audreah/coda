@@ -62,20 +62,25 @@ def get_playlist_songs(conn,pid):
     curs.execute(sql,[pid])
     return curs.fetchall()
 
-def check_unique_playlist_name(conn,pName, username):
+def check_unique_playlist_name(conn, pName, uid):
     """
     Given a connection object, a playlist name, and a user id,
     checks if the user already has a playlist with that name
+
+    :param conn: connection to database
+    :param pName: str | playlist name
+    :param uid: int | user's unique id
+    :returns: bool | True if this user does not already have a 
+        playlist by this name
     """
     curs = dbi.cursor(conn)
-    sql = '''select count(playlist_name)
-            from coda_playlist 
-            where playlist_name = %s and created_by = (select user_id from coda_user where username = %s)'''
-    curs.execute(sql,[pName,username])
+    sql = '''
+        select count(playlist_name)
+        from coda_playlist 
+        where playlist_name = %s and created_by = %s'''
+    curs.execute(sql,[pName,uid])
     res = curs.fetchall()
-    if res[0][0] == 0:
-        return True
-    return False
+    return res[0][0] == 0
 
 def updatePlaylist(conn,pid,newName,newGenre):
     """
@@ -106,8 +111,8 @@ def createPlaylist(conn,name,genre,user):
     """
     curs = dbi.cursor(conn)
     sql = '''insert into coda_playlist
-                        (playlist_name,playlist_genre,created_by)
-             values (%s,%s,(select user_id from coda_user where username = %s))'''
+             (playlist_name,playlist_genre,created_by)
+             values (%s,%s,%s)'''
     curs.execute(sql,[name,genre,user])
     conn.commit()
 
@@ -191,3 +196,9 @@ def get_playlists_without_song(conn,uid,sid):
     curs.execute(sql,[uid,sid])
     playlistDictList = curs.fetchall()
     return playlistDictList
+
+if __name__ == '__main__':
+    dbi.cache_cnf()   # defaults to ~/.my.cnf
+    dbi.use('coda_db')
+    conn = dbi.connect()
+    
