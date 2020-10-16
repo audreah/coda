@@ -24,6 +24,26 @@ def get_playlist_info(conn,pid):
     curs.execute(sql,[pid])
     return curs.fetchone()
 
+def multiple_playlists(conn,pid_list):
+    """
+    Given a connection object and list of playlist ids, gets the name, 
+    genre, and creator of those playlists
+
+    :param conn: connection to database
+    :param pid_list: integer list indicating unique playlist ids
+    :returns: a list of dictionaries containing the playlist's name, genre, id,
+        and the id and name of the user who created it for each specified
+        playlist
+    """
+    curs = dbi.dict_cursor(conn)
+    sql = '''select playlist_name, playlist_genre, display_name, playlist_id, 
+            created_by from coda_playlist 
+            inner join coda_user on 
+                (coda_user.user_id = coda_playlist.created_by)
+            where playlist_id in %s'''
+    curs.execute(sql,[pid_list])
+    return curs.fetchall()
+
 def get_all_playlists_by_user(conn,username):
     """
     Given a connection object and a uid, returns all playlists in the 

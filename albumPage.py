@@ -25,6 +25,23 @@ def get_album(conn, aid):
         where album_id = %s''', [aid])
     return curs.fetchone()
 
+def multiple_albums(conn, aid_list):
+    ''' 
+    Get a list of all the albums with ids in the provided list.
+    This prevents us from needing to execute queries in a loop.
+
+    :param conn: connection to database
+    :param aid_list: int[] with ids for specified albums
+    :returns: a list of dictionaries with album information for
+        the requested albums
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select album_id, album_title, artist_name,
+        release_year, artist_id from coda_album
+        join coda_artist using(artist_id)
+        where album_id in %s''', [aid_list])
+    return curs.fetchall()
+
 def get_songs(conn, aid):
     ''' 
     Get the songs on this album.
