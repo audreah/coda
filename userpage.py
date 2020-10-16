@@ -156,7 +156,7 @@ def add_artist(conn, artist_name):
         [artist_name])
     conn.commit()
 
-def add_album(conn, album_title, artist_name):
+def add_album(conn, album_title, artist_name, release_year):
     """
     Allows user to add album to coda database.
 
@@ -165,11 +165,11 @@ def add_album(conn, album_title, artist_name):
     :param artist_name: text input of artist name
     """
     curs = dbi.dict_cursor(conn)
-    curs.execute('''insert into coda_album(album_title,artist_id)
+    curs.execute('''insert into coda_album(album_title,artist_id, release_year)
         values (%s, (
             select artist_id from coda_artist where artist_name = %s
-        ))''', 
-        [album_title, artist_name])
+        ), %s)''', 
+        [album_title, artist_name, release_year])
     conn.commit()
 
 def add_song(conn, song_title, genre, album_title, added_by):
@@ -257,6 +257,46 @@ def check_album(conn, album_title, artist_name):
     result = curs.fetchone()
     return result['count(album_id)'] == 0
 
+def check_album_year(conn, album_title, artist_name):
+    """
+    Checks if an album has a released year by the artist exists in the database.
+
+    :param conn: connection to database
+    :param album_title: str | title of album
+    :param artist_name: str | name of artist who released the album
+    :returns: release year of the album
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select release_year from coda_album where album_title = %s 
+        and artist_id = 
+        (select artist_id from coda_artist where artist_name = %s)''',
+        [album_title, artist_name])
+    result = curs.fetchone()
+    return result
+
+def update_release(conn, release_year, album_title, artist_name):
+    """
+    Updates the release year of the album if it does not already exist in database.
+
+    :param conn: connection to database
+    :param release_year: int | release year of album
+    :param album_title: str | title of album
+    :param artist_name: str | name of artist who released the album
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''update coda_album set release_year = %s where album_title = %s 
+        and artist_id = (select artist_id from coda_artist where artist_name = %s)''',
+        [release_year, album_title, artist_name])
+    conn.commit()
+
+def get_song_id(conn, song_title, album_title, artist_name):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select song_id from coda_song where song_title = %s and album_id = 
+    (select album_id from coda_album where album_title = %s 
+    and artist_id = (select artist_id from coda_artist where artist_name = %s))''',
+    [song_title, album_title, artist_name])
+    return curs.fetchone()
+
 def add_follow(conn,friendId,currentId):
     '''
     Allows the current user to follow another user
@@ -271,3 +311,8 @@ def add_follow(conn,friendId,currentId):
     curs.execute(sql,[currentId,friendId])
     conn.commit()
     
+def get_playlist(conn, playlist_name, uid):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select playlist_id from coda_playlist where playlist_name = %s and created_by = %s''',
+    [playlist_name, uid])
+    return curs.fetchone()

@@ -45,6 +45,9 @@ def logged_in():
     """ Redirects to the explore page if logged in. """
     conn = dbi.connect()
     username = session['CAS_USERNAME']
+    session['uid'] = userpage.get_userid_from_username(conn,username)
+    user_id = session['uid']
+    
     # if user does not yet exist in database
     start_transaction(conn)
     if (userpage.check_username(conn, username)):
@@ -139,7 +142,7 @@ def playlistPage(pid):
 
         # link to the user's individual profile page in the navbar
         username = session['CAS_USERNAME']
-        user_id = userpage.get_userid_from_username(conn,username)
+        user_id = session['uid']
         
         playlistInfo = playlist.get_playlist_info(conn,pid)
         if playlistInfo == None: # playlist not found
@@ -234,7 +237,7 @@ def user(uid):
             # information for user browsing the app
             is_logged_in = True
             username = session['CAS_USERNAME']
-            loggedInUser = userpage.get_userid_from_username(conn,username)
+            loggedInUser = session['uid']
 
             # information for the user whose page we are visiting
             user = userpage.get_user_from_id(conn, uid)
@@ -285,8 +288,7 @@ def addSongs():
         is_logged_in = True
         
         if request.method == 'GET':
-            user_id = userpage.get_userid_from_username(conn, 
-                session['CAS_USERNAME'])
+            user_id = session['uid']
             return render_template('addSongs.html', page_title="Add Song",
                 user_id = user_id)
         else:
@@ -294,42 +296,55 @@ def addSongs():
             albumName = request.form.get('album-name')
             songName = request.form.get('song-name')
             genre = request.form.get('genre')
+            year = request.form.get('year')
             username = session['CAS_USERNAME']
 
             # checks if artist already in database, returns true if not in database
             start_transaction(conn)
             if userpage.check_artist(conn, artistName):
                 userpage.add_artist(conn, artistName)
-                userpage.add_album(conn, albumName, artistName)
+                userpage.add_album(conn, albumName, artistName, year)
                 userpage.add_song(conn, songName, genre, albumName, username)
+                sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
                 flash(songName + ' has been added to coda database!')
                 commit_transaction(conn)
-                return redirect(url_for("addSongs"))
+                return redirect(url_for("song", sid = sid))
             #artist already in database
             else:
                 # returns true if album is not in database
                 if userpage.check_album(conn, albumName, artistName):
-                    userpage.add_album(conn, albumName, artistName)
+                    userpage.add_album(conn, albumName, artistName, year)
 
                     # returns true if song is not in database
                     if userpage.check_song(conn, songName, albumName):
                         userpage.add_song(conn, songName, genre, albumName, username)
+                        sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
                         flash(songName + ' has been added to coda database!')
                         commit_transaction(conn)
-                        return redirect(url_for("addSongs"))
+                        return redirect(url_for("song", sid = sid))
                     else:
+                        sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
                         flash('Song is already in database!')
                         commit_transaction(conn)
-                        return redirect(url_for("addSongs"))
+                        return redirect(url_for("song", sid = sid))
 
                     commit_transaction(conn)
 
                 #if artist and album already in database
                 else:
-                    userpage.add_song(conn, songName, genre, albumName, username)
-                    commit_transaction(conn)
-                    flash(songName + " has been added to coda database!")
-                    return redirect(url_for("addSongs"))
+                    if(userpage.check_album_year(conn, albumName, artistName)['release_year'] == None):
+                        userpage.update_release(conn, year, albumName, artistName)
+                        userpage.add_song(conn, songName, genre, albumName, username)
+                        sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
+                        commit_transaction(conn)
+                        flash(songName + " has been added to coda database!")
+                        return redirect(url_for("song", sid = sid))
+                    else:
+                        userpage.add_song(conn, songName, genre, albumName, username)
+                        sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
+                        commit_transaction(conn)
+                        flash(songName + " has been added to coda database!")
+                        return redirect(url_for("song", sid = sid))
     else:
         flash("You need to be logged in to add to database!")
         return redirect(url_for("explore"))
@@ -342,12 +357,17 @@ def artist(aid):
     :returns: the artist's profile page
     '''
     conn = dbi.connect()
-    artist = artistPage.get_artist(conn, aid)
-    albumList = artistPage.get_artist_albums(conn, aid)
-    user_id = userpage.get_userid_from_username(conn, session['CAS_USERNAME'])
-    return (render_template("artist.html", artist = artist, 
-        albumList = albumList, page_title = artist['artist_name'],
-        user_id = user_id))
+    if 'CAS_USERNAME' in session:
+        is_logged_in = True
+        artist = artistPage.get_artist(conn, aid)
+        albumList = artistPage.get_artist_albums(conn, aid)
+        user_id = session['uid']
+        return (render_template("artist.html", artist = artist, 
+            albumList = albumList, page_title = artist['artist_name'],
+            user_id = user_id))
+    else:
+        flash("please log in")
+        return redirect(url_for("explore"))
 
 @app.route('/album/<int:aid>', methods=["GET", "POST"])
 def album(aid):
@@ -360,21 +380,26 @@ def album(aid):
             the desired album's indiviual page otherwise
     '''
     conn = dbi.connect()
-    albumInfo = albumPage.get_album(conn, aid)
-    songs = albumPage.get_songs(conn, aid)
-    user_id = userpage.get_userid_from_username(conn, session['CAS_USERNAME'])
+    if 'CAS_USERNAME' in session:
+        is_logged_in = True
+        albumInfo = albumPage.get_album(conn, aid)
+        songs = albumPage.get_songs(conn, aid)
+        user_id = session['uid']
 
-    if albumInfo == None: # album not found
-        return render_template('notFound.html',
-            type='No album', page_title="Album Not Found",
+        if albumInfo == None: # album not found
+            return render_template('notFound.html',
+                type='No album', page_title="Album Not Found",
+                user_id=user_id)
+        
+        # album found
+        return render_template('album.html', 
+            albumDescription=albumInfo,
+            songs=songs,
+            page_title='Album | ' + albumInfo['album_title'],
             user_id=user_id)
-    
-    # album found
-    return render_template('album.html', 
-        albumDescription=albumInfo,
-        songs=songs,
-        page_title='Album | ' + albumInfo['album_title'],
-        user_id=user_id)
+    else:
+        flash("please log in")
+        return redirect(url_for("explore"))
 
 @app.route('/song/<int:sid>', methods = ['GET','POST'])
 def song(sid):
@@ -390,7 +415,7 @@ def song(sid):
     '''
     conn = dbi.connect()
     song_info = songPage.get_song(conn, sid)
-    user_id = userpage.get_userid_from_username(conn, session['CAS_USERNAME'])
+    user_id = session['uid']
 
     if song_info == None: # song not found
         return render_template('notFound.html',
@@ -411,7 +436,7 @@ def song(sid):
                         user_id=user_id)
                         
                 else: # separate the playlists the song is in from ones it's not in
-                    uid = userpage.get_userid_from_username(conn,username)
+                    uid = session['uid']
                     pAlreadyIn = playlist.get_playlists_with_song(conn,uid,sid)
                     pNotIn = playlist.get_playlists_without_song(conn,uid,sid)
                     return render_template('song.html', 
@@ -455,7 +480,7 @@ def createPlaylist():
     if 'CAS_USERNAME' in session:
         is_logged_in = True
         username = session['CAS_USERNAME']
-        user_id = userpage.get_userid_from_username(conn, username)
+        user_id = session['uid']
 
         if request.method == 'GET':
             return render_template('createPlaylist.html', 
@@ -469,9 +494,11 @@ def createPlaylist():
             start_transaction(conn) # ensure thread safety
             if playlist.check_unique_playlist_name(conn, pName, user_id):
                 playlist.createPlaylist(conn,pName,pGenre, user_id)
+                pid = userpage.get_playlist(conn, pName, user_id)['playlist_id']
+                print(pid)
                 flash(pName + ' has been created!')
                 commit_transaction(conn) # complete transaction
-                return redirect(url_for('createPlaylist'))
+                return redirect(url_for('playlistPage', pid = pid))
                 
             else: #if playlist name by that user already in database
                 commit_transaction(conn) # complete transaction
@@ -495,7 +522,7 @@ def genre(genreName):
     conn = dbi.connect()
     playlists = playlist.playlists_by_genre(conn, genreName)
     songs = songPage.songs_by_genre(conn, genreName)
-    user_id = userpage.get_userid_from_username(conn, session['CAS_USERNAME'])
+    user_id = session['uid']
 
     if playlists == None and songs == None: # genre not found
         return render_template('notFound.html',
@@ -521,7 +548,7 @@ def query():
     userMatches = userpage.search_user(conn, query)
     playlistMatches = playlist.get_similar_playlists(conn, query)
     artistMatches = artistPage.search_artist(conn, query)
-    user_id = userpage.get_userid_from_username(conn, session['CAS_USERNAME'])
+    user_id = session['uid']
 
     # no matches
     if (not albumMatches and not songMatches and not artistMatches
