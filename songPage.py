@@ -28,6 +28,27 @@ def get_song(conn, sid):
         where song_id = %s''', [sid])
     return curs.fetchone()
 
+def multiple_songs(conn, sid_list):
+    '''
+    Get a list of all the albums with ids in the provided list.
+    This prevents us from needing to execute queries in a loop.
+
+    :param conn: connection to database
+    :param aid_list: int[] with ids for specified songs
+    :returns: a list of dictionaries with song information for
+        the requested song ids
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select song_title, genre, display_name,
+        artist_name, release_year, album_title, song_id,
+        artist_id, album_id, user_id
+        from coda_song
+        join coda_album using(album_id)
+        join coda_artist using(artist_id)
+        join coda_user on coda_user.user_id = coda_song.added_by
+        where song_id in %s''', [sid_list])
+    return curs.fetchall()
+
 def get_similar_songs(conn, text):
     '''
     Gets the songs whose names are similar to the user's query

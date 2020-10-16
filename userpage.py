@@ -37,6 +37,18 @@ def get_user_from_id(conn, user_id):
     curs.execute('''select * from coda_user where user_id = %s''', [user_id])
     return curs.fetchone()
 
+def multiple_users(conn, uid_list):
+    '''
+    Retrieves user information given a list of ids.
+    :param conn: connection to database
+    :param uid_list: int[] with unique ids for specified users
+    :returns: a list of dictionaries with those users' ids, display names, 
+        and CAS usernames
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select * from coda_user where user_id in %s''', [uid_list])
+    return curs.fetchall()
+
 def get_userid_from_username(conn, username):
     '''
     Retrieves user id where the username is specific to CAS log in.

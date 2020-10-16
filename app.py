@@ -213,7 +213,8 @@ def playlistPage(pid):
                 playlist.deletePlaylist(conn,pid)
                 flash(oldName + ' deleted successfully')
                 return redirect(url_for('user', uid = uid))
-    else:
+    # what is the point of this branch
+    else: # HUH how do we get playlistInfo, nestedSongs, and createdby
         return render_template('playlist.html', 
                             playlistInfo=playlistInfo, 
                             songs=nestedSongs, 
@@ -556,43 +557,46 @@ def query():
         artist = artistMatches[0]
         artistAlbums = artistPage.get_artist_albums(conn, artist['artist_id'])
         return render_template("artist.html", artist=artist, 
-            albumList=artistAlbums, page_title=artist['artist_name'], user_id=user_id)
+            albumList=artistAlbums, page_title=artist['artist_name'], 
+            user_id=user_id)
 
     # multiple matches
     else:
-        # get the ids for each album and song that matches the query
+        # get the ids for each album that matches the query
         albums = []
-        for albumDict in albumMatches:
-            albumID = albumDict['album_id']
-            albums.append(albumPage.get_album(conn, albumID))  
+        album_list = [albumDict['album_id'] for albumDict in albumMatches]
+        if len(album_list) > 0:
+            # only execute if there exist album ids for which to extract info
+            albums = albumPage.multiple_albums(conn, album_list)
 
         # extract information for each matching song
         songs = []
-        for songDict in songMatches:
-            songID = songDict['song_id']
-            songs.append(songPage.get_song(conn, songID))
+        sid_list = [songDict['song_id'] for songDict in songMatches]
+        if len(sid_list) > 0:
+            songs = songPage.multiple_songs(conn, sid_list)
 
         # extract information for each matching user
         users = []
-        for userDict in userMatches:
-            userID = userDict['user_id']
-            users.append(userpage.get_user_from_id(conn, userID))
-
+        uid_list = [userDict['user_id'] for userDict in userMatches]
+        if len(uid_list) > 0:
+            users = userpage.multiple_users(conn, uid_list)
+        
         # extract information for each matching playlist
         playlists = []
-        for playlistDict in playlistMatches:
-            playlistID = playlistDict['playlist_id']
-            playlists.append(playlist.get_playlist_info(conn, playlistID))
+        pid_list = [playlistDict['playlist_id'] for playlistDict
+            in playlistMatches]
+        if len(pid_list) > 0:
+            playlists = playlist.multiple_playlists(conn, pid_list)
 
         # extract information for each matching artist
         artists = []
-        for artistDict in artistMatches:
-            artistID = artistDict['artist_id']
-            artists.append(artistPage.get_artist(conn, artistID))
+        artist_list = [artistDict['artist_id'] for artistDict in artistMatches]
+        if len(artist_list) > 0:
+            artists = artistPage.multiple_artists(conn, artist_list)
 
         return render_template('multiple.html', 
             albums=albums, songs=songs, users=users,
-            playlists=playlists, name = query, artists=artists,
+            playlists=playlists, artists=artists, name=query, 
             page_title="Mutliple Results Found", user_id=user_id)
 
 

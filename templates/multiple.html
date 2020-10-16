@@ -6,22 +6,25 @@
 
 {% block main_content %}
 
-    
+{% if songs|length > 0 %}
 <h3> Songs matching {{name}} </h3>
-    <ul>
-        {% for song in songs %} 
-            <li><a href="{{ url_for('song', sid=song.song_id) }}">{{song.song_title}}</a></li>
-        {% endfor %}
-    </ul>
-    
+<ul>
+    {% for song in songs %} 
+        <li><a href="{{ url_for('song', sid=song.song_id) }}">{{song.song_title}}</a></li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if albums|length > 0 %}
 <h3> Albums matching {{name}} </h3>
+<ul>
+    {% for album in albums %}  
+            <li><a href="{{ url_for('album', aid=album.album_id) }}">{{album.album_title}}</a></li>
+    {% endfor %}
+</ul>
+{% endif %}
 
-    <ul>
-        {% for album in albums %}  
-             <li><a href="{{ url_for('album', aid=album.album_id) }}">{{album.album_title}}</a></li>
-        {% endfor %}
-    </ul>
-
+{% if playlists|length > 0 %}
 <h3> Playlists matching {{name}} </h3>
 <ul>
     {% for playlist in playlists %}
@@ -29,20 +32,26 @@
     {{playlist.playlist_name}}</a></li>
     {% endfor %}
 </ul>
+{% endif %}
     
+{% if users|length > 0 %}
 <h3> Users matching {{name}} </h3>
-    <ul>
-        {% for user in users %}
-            <li><a href="{{ url_for('user', uid=user.user_id) }}">
-		{{user.display_name}}</a></li>
-        {% endfor %}
-    </ul>
+<ul>
+    {% for user in users %}
+        <li><a href="{{ url_for('user', uid=user.user_id) }}">
+    {{user.display_name}}</a></li>
+    {% endfor %}
+</ul>
+{% endif %}
 
+{% if artists|length > 0 %}
 <h3> Artists matching {{name}} </h3>
-    <ul>
-        {% for artist in artists %}
-            <li><a href="{{ url_for('artist', aid=artist.artist_id) }}">
-        {{artist.artist_name}}</a></li>
-        {% endfor %}
-    </ul>
+<ul>
+    {% for artist in artists %}
+        <li><a href="{{ url_for('artist', aid=artist.artist_id) }}">
+    {{artist.artist_name}}</a></li>
+    {% endfor %}
+</ul>
+{% endif %}
+
 {% endblock %}

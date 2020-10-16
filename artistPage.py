@@ -56,3 +56,16 @@ def get_artist(conn, artist_id):
     curs.execute('''select * from coda_artist where artist_id = %s''', 
         [artist_id])
     return curs.fetchone()
+
+def multiple_artists(conn, aid_list):
+    '''
+    Retrieves information for multiple artists.
+
+    :param conn: connection to database
+    :param aid_list: int[] representing unique artist ids
+    :returns: a list of dictionaries containing the artists' information
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select * from coda_artist where artist_id in %s''', 
+        [aid_list])
+    return curs.fetchall()
