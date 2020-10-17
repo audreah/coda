@@ -16,7 +16,8 @@ import cs304dbi as dbi
 
 # import cs304dbi_sqlite3 as dbi
 
-import random,playlist,albumPage,songPage,userpage,artistPage,imageupload,insertimagefiles
+import random, playlist, albumPage, songPage, userpage, artistPage
+import imageupload, insertimagefiles
 
 app.secret_key = 'your secret here'
 # replace that with a random key
