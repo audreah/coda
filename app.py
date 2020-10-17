@@ -310,36 +310,40 @@ def addSongs():
                 # returns true if album is not in database
                 if userpage.check_album(conn, albumName, artistName):
                     userpage.add_album(conn, albumName, artistName, year)
-
-                    # returns true if song is not in database
-                    if userpage.check_song(conn, songName, albumName):
-                        userpage.add_song(conn, songName, genre, albumName, uid)
-                        sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
-                        flash(songName + ' has been added to coda database!')
-                        commit_transaction(conn)
-                        return redirect(url_for("song", sid = sid))
-                    else:
-                        sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
-                        flash('Song is already in database!')
-                        commit_transaction(conn)
-                        return redirect(url_for("song", sid = sid))
+                    #since album and artist are not in databases, song is not in database
+                    userpage.add_song(conn, songName, genre, albumName, uid)
+                    sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
+                    flash(songName + ' has been added to coda database!')
+                    commit_transaction(conn)
+                    return redirect(url_for("song", sid = sid))
 
                     commit_transaction(conn)
 
                 #if artist and album already in database
                 else:
-                    if(userpage.check_album_year(conn, albumName, artistName)['release_year'] == None):
-                        userpage.update_release(conn, year, albumName, artistName)
-                        userpage.add_song(conn, songName, genre, albumName, uid)
-                        sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
-                        commit_transaction(conn)
-                        flash(songName + " has been added to coda database!")
-                        return redirect(url_for("song", sid = sid))
+                    # returns true if song is not in database
+                    if userpage.check_song(conn, songName, albumName):
+                        
+                        # checks if release year exist, updates it if None
+                        if(userpage.check_album_year(conn, albumName, artistName)['release_year'] == None):
+                            userpage.update_release(conn, year, albumName, artistName)
+                            userpage.add_song(conn, songName, genre, albumName, uid)
+                            sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
+                            commit_transaction(conn)
+                            flash(songName + " has been added to coda database!")
+                            return redirect(url_for("song", sid = sid))
+                        else:
+                            userpage.add_song(conn, songName, genre, albumName, uid)
+                            sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
+                            commit_transaction(conn)
+                            flash(songName + " has been added to coda database!")
+                            return redirect(url_for("song", sid = sid))
+
+                    # song already in database
                     else:
-                        userpage.add_song(conn, songName, genre, albumName, uid)
                         sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
+                        flash('Song is already in database!')
                         commit_transaction(conn)
-                        flash(songName + " has been added to coda database!")
                         return redirect(url_for("song", sid = sid))
     else:
         flash("You need to be logged in to add to the database!")
