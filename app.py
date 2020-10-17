@@ -413,13 +413,13 @@ def album(aid):
                 f.save(pathname)
 
                 insertimagefiles.insert_picfile(conn,pathname,filename,aid)
-                album_image = imageupload.get_image_by_album(conn,albumInfo['album_id'])
+                image_url = imageupload.get_image_by_album(conn,albumInfo['album_id'])
                 flash('Upload successful')
                 return render_template('album.html', 
                     albumDescription=albumInfo,
                     songs=songs,
                     page_title='Album | ' + albumInfo['album_title'],
-                    user_id=user_id, album_image=album_image)
+                    user_id=user_id, album_image=image_url)
             except Exception as err:
                 flash('Upload failed {why}'.format(why=err))
                 return render_template('album.html',src='',nm='',albumDescription=albumInfo)
