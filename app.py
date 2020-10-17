@@ -277,77 +277,85 @@ def editUsername(uid):
 def addSongs():
     '''
     Allows user to add songs to coda database
-    :returns: form to add songs or the home page if not logged in
+    :returns: form to add songs if logged in
+        otherwise, prompts user to log in
     '''
-    conn = dbi.connect()
-    if 'CAS_USERNAME' in session:
-        if request.method == 'GET':
-            return render_template('addSongs.html', page_title="Add Song")
-        
-        else: 
-            # get user-supplied information
-            artistName = request.form.get('artist-name')
-            albumName = request.form.get('album-name')
-            songName = request.form.get('song-name')
-            genre = request.form.get('genre')
-            year = request.form.get('year')
-            username = session['CAS_USERNAME']
-            uid = session['uid']
-
-            # returns true if artist is not already in database
-            start_transaction(conn)
-            if userpage.check_artist(conn, artistName):
-                userpage.add_artist(conn, artistName)
-                userpage.add_album(conn, albumName, artistName, year)
-                userpage.add_song(conn, songName, genre, albumName, uid)
-                sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
-                flash(songName + ' has been added to coda database!')
-                commit_transaction(conn)
-                return redirect(url_for("song", sid = sid))
-            
-            # artist already in database
-            else:
-                # returns true if album is not in database
-                if userpage.check_album(conn, albumName, artistName):
-                    userpage.add_album(conn, albumName, artistName, year)
-                    #since album and artist are not in databases, song is not in database
-                    userpage.add_song(conn, songName, genre, albumName, uid)
-                    sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
-                    flash(songName + ' has been added to coda database!')
-                    commit_transaction(conn)
-                    return redirect(url_for("song", sid = sid))
-
-                    commit_transaction(conn)
-
-                #if artist and album already in database
-                else:
-                    # returns true if song is not in database
-                    if userpage.check_song(conn, songName, albumName):
-                        
-                        # checks if release year exist, updates it if None
-                        if(userpage.check_album_year(conn, albumName, artistName)['release_year'] == None):
-                            userpage.update_release(conn, year, albumName, artistName)
-                            userpage.add_song(conn, songName, genre, albumName, uid)
-                            sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
-                            commit_transaction(conn)
-                            flash(songName + " has been added to coda database!")
-                            return redirect(url_for("song", sid = sid))
-                        else:
-                            userpage.add_song(conn, songName, genre, albumName, uid)
-                            sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
-                            commit_transaction(conn)
-                            flash(songName + " has been added to coda database!")
-                            return redirect(url_for("song", sid = sid))
-
-                    # song already in database
-                    else:
-                        sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
-                        flash('Song is already in database!')
-                        commit_transaction(conn)
-                        return redirect(url_for("song", sid = sid))
-    else:
+    # not logged in
+    if 'CAS_USERNAME' not in session:
         flash("You need to be logged in to add to the database!")
         return redirect(url_for("explore"))
+
+    # logged in
+    if request.method == 'GET':
+        return render_template('addSongs.html', page_title="Add Song")
+    
+    else: 
+        uid = session['uid']
+
+        # get user-supplied information
+        artistName = request.form.get('artist-name')
+        albumName = request.form.get('album-name')
+        songName = request.form.get('song-name')
+        genre = request.form.get('genre')
+        year = request.form.get('year')
+        
+        conn = dbi.connect()
+
+        start_transaction(conn)
+        # If the artist is not already in the database, this song cannot conflict 
+        # with any existing data, so add the artist, album, and song
+        if userpage.check_artist(conn, artistName):
+            userpage.add_artist(conn, artistName)
+            userpage.add_album(conn, albumName, artistName, year)
+            userpage.add_song(conn, songName, genre, albumName, uid)
+            sid = userpage.get_song_id(conn, songName, albumName, 
+                artistName)['song_id']
+            flash(songName + ' has been added to coda database!')
+            commit_transaction(conn)
+            return redirect(url_for("song", sid = sid))
+        
+        # Artist already exists in the database, so check for conflicting
+        # song titles within the same album, if that album exists
+        
+        # If album is not in database, add the album and song
+        if userpage.check_album(conn, albumName, artistName):
+            userpage.add_album(conn, albumName, artistName, year)
+            # Since album and artist are not in databases, song is not in database
+            userpage.add_song(conn, songName, genre, albumName, uid)
+            sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
+            flash(songName + ' has been added to coda database!')
+            commit_transaction(conn)
+            return redirect(url_for("song", sid = sid))
+
+        # Artist and album are already in database,
+        # so we can just check for the song
+
+        # returns true if song is not in database
+        if userpage.check_song(conn, songName, albumName):
+            
+            # If a release year was not previously supplied for this song's 
+            # album but the form now specifies one, update the release year
+            # for that album
+
+            if not userpage.check_album_year(conn, albumName, 
+                artistName)['release_year']:
+                userpage.update_release(conn, year, albumName, artistName)
+            
+            # in either case, add the song
+            userpage.add_song(conn, songName, genre, albumName, uid)
+            sid = userpage.get_song_id(conn, songName, albumName, 
+                artistName)['song_id']
+            commit_transaction(conn)
+            flash(songName + " has been added to coda database!")
+            return redirect(url_for("song", sid = sid))
+
+        # song already in database
+        else:
+            sid = userpage.get_song_id(conn, songName, albumName, 
+                artistName)['song_id']
+            flash('Song is already in the coda database!')
+            commit_transaction(conn)
+            return redirect(url_for("song", sid = sid))
 
 @app.route('/artist/<int:aid>')
 def artist(aid):
