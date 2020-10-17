@@ -1,6 +1,7 @@
 '''
 Authors: Audrea Huang
-Version: Fall T1 2020 | 13 Oct 2020
+Version: Fall T1 2020 | 17 Oct 2020
+Extract information from coda_db relevant to songs
 '''
 
 import cs304dbi as dbi
@@ -73,7 +74,8 @@ def get_genres(conn):
     curs.execute('''select distinct genre from coda_song union (
             select distinct playlist_genre from coda_playlist)''')
     genreDictList = curs.fetchall()
-    genresDB = [genreDict['genre'] for genreDict in genreDictList]
+    genresDB = [genreDict['genre'] for genreDict in genreDictList
+        if genreDict['genre'].strip() != ''] # don't include empty genres
 
     # collect distinct genre names
     genres = []
@@ -118,6 +120,6 @@ if __name__ == '__main__':
     # genres = get_genres(conn)
     # print(genres)
 
-    countrySongs = songs_by_genre(conn, 'Christmas')
-    print(countrySongs)
+    # countrySongs = songs_by_genre(conn, 'Christmas')
+    # print(countrySongs)
     

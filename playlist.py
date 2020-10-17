@@ -1,5 +1,6 @@
 '''
 Authors: Danya Gao, Audrea Huang, Liz Huang
+CS304 Fall 2020 T1
 Gets information about playlists from the coda_db database
 '''
 
@@ -44,19 +45,18 @@ def multiple_playlists(conn,pid_list):
     curs.execute(sql,[pid_list])
     return curs.fetchall()
 
-def get_all_playlists_by_user(conn,username):
+def get_all_playlists_by_user(conn,uid):
     """
     Given a connection object and a uid, returns all playlists in the 
     database created by that user
     :param conn: database connection
-    :param username: str | account username
+    :param uid: int | account id
     :returns: list of dictionaries with information for that user's playlists
     """
     curs = dbi.dict_cursor(conn)
     sql = '''select * from coda_playlist
-            where created_by = (
-                select user_id from coda_user where username = %s)'''
-    curs.execute(sql,[username])
+            where created_by = %s'''
+    curs.execute(sql,[uid])
     return curs.fetchall()
 
 def get_similar_playlists(conn,query):
@@ -125,8 +125,8 @@ def check_unique_playlist_name(conn, pName, uid):
         from coda_playlist 
         where playlist_name = %s and created_by = %s'''
     curs.execute(sql,[pName,uid])
-    res = curs.fetchall()
-    return res[0][0] == 0
+    res = curs.fetchone()
+    return res[0] == 0
 
 def updatePlaylist(conn,pid,newName,newGenre):
     """
@@ -248,4 +248,3 @@ if __name__ == '__main__':
     dbi.cache_cnf()   # defaults to ~/.my.cnf
     dbi.use('coda_db')
     conn = dbi.connect()
-    print(get_playlist_song_ids(conn, 3))

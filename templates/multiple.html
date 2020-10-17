@@ -10,7 +10,9 @@
 <h3> Songs matching {{name}} </h3>
 <ul>
     {% for song in songs %} 
-        <li><a href="{{ url_for('song', sid=song.song_id) }}">{{song.song_title}}</a></li>
+        <li><a href="{{ url_for('song', sid=song.song_id) }}">
+            {{song.song_title}}</a>
+        </li>
     {% endfor %}
 </ul>
 {% endif %}
@@ -19,7 +21,9 @@
 <h3> Albums matching {{name}} </h3>
 <ul>
     {% for album in albums %}  
-            <li><a href="{{ url_for('album', aid=album.album_id) }}">{{album.album_title}}</a></li>
+            <li><a href="{{ url_for('album', aid=album.album_id) }}">
+                {{album.album_title}}</a>
+            </li>
     {% endfor %}
 </ul>
 {% endif %}

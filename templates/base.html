@@ -5,7 +5,8 @@
     <meta name=author content="">
     <title>{{ page_title }}</title>
     <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" 
+      rel="stylesheet">
     {% block head_style %} {% endblock %}
 </head>
 <body>
@@ -25,9 +26,12 @@
 
       <div class="explore"><a href = "{{ url_for('explore') }}">Explore</a></div>
 
-      <div class="addSongs"><a href = "{{ url_for('addSongs') }}">Add Song</a></div>
+      <div class="addSongs"><a href = "{{ url_for('addSongs') }}">
+        Add Song</a>
+      </div>
       
-      <div class="searchbar"><form class="search" method="GET" action= "{{ url_for('query') }}">
+      <div class="searchbar"><form class="search" method="GET" 
+        action= "{{ url_for('query') }}">
         <p><label>Search: <input type="text" name="searchbar"></label>
         <input class = "button" type="submit" value="search"></p>
       </form></div>
@@ -41,7 +45,8 @@
           </form>
         </div> 
           
-        <div class="profilePage"><a href = "{{ url_for('user', uid = session.uid ) }}" style = "text-decoration: none">My Profile</a></div>
+        <div class="profilePage"><a href = "{{ url_for('user', uid = session.uid ) }}"
+          style = "text-decoration: none">My Profile</a></div>
           
         {% else %}
         <div class="session">

@@ -10,10 +10,22 @@ and who added the song to the database. -->
 <p>Title: {{song.song_title}}</p>
 <p>Artist: <a href="{{url_for('artist', aid=song.artist_id)}}">
     {{song.artist_name}}</a></p> 
-<p>Genre: {{song.genre}}</p> 
+
+{% if song.genre != None %}
+    {% if song.genre|length > 0 %}
+        <p>Genre: {{song.genre}}</p> 
+    {% endif %}
+{% endif %}
+
 <p>Appears on: <a href="{{url_for('album', aid=song.album_id)}}">
     {{song.album_title}}</a></p>
-<p>Release Year: {{song.release_year}}</p>
+
+{% if song.release_year != None %}
+    {% if song.release_year|length > 0 %}
+        <p>Release Year: {{song.release_year}}</p>
+    {% endif %}
+{% endif %}
+
 <p>Added by: <a href="{{url_for('user', uid=song.user_id)}}">
     {{song.display_name}}</a></p>
 
