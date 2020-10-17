@@ -49,6 +49,7 @@ def logged_in():
     """ Redirects to the explore page if logged in. """
     conn = dbi.connect()
     username = session['CAS_USERNAME']
+    # store uid in session
     session['uid'] = userpage.get_userid_from_username(conn,username)
     user_id = session['uid']
     
@@ -100,15 +101,9 @@ def explore():
         print(k,' => ',session[k])
     if '_CAS_TOKEN' in session:
         token = session['_CAS_TOKEN']
-    if 'CAS_ATTRIBUTES' in session:
-        attribs = session['CAS_ATTRIBUTES']
-        print('CAS_attributes: ')
-        for k in attribs:
-            print('\t',k,' => ',attribs[k])
     if 'CAS_USERNAME' in session:
         is_logged_in = True
         username = session['CAS_USERNAME']
-        uid = userpage.get_userid_from_username(conn,username)
         print(('CAS_USERNAME is: ',username))
     else:
         is_logged_in = False
@@ -121,142 +116,138 @@ def explore():
     if 'CAS_USERNAME' in session:
         is_logged_in = True
         return render_template('main.html',page_title='Home',genres=genres,
-                           username=username,
-                           is_logged_in=is_logged_in,
-                           cas_attributes=session.get('CAS_ATTRIBUTES'),
-                           user_id=uid)
+                           username=username)
     else:
         return render_template('login.html')
 
 @app.route('/playlist/<int:pid>', methods=["GET", "POST"]) 
 def playlistPage(pid):
     '''
-    Displays name, genre, and creator for a playlist, along with all the
-    songs that have been added to the playlist.
+    playlistPage follows the logic outlined below in order to reduce the amount
+    of information we need to extract from the database and limit function
+    calls.
+
+    1. Extract information for the specified playlist
+    2. If that playlist is not found, render template for the Not Found page
+    3. If the logged-in user wants to delete their own playlist, delete it and
+        redirect to their user page
+    4. Users who aren't logged in are also allowed to view playlist information
+        If a playlist is found for the GET request (regardless of whether or 
+        not the user is logged in), display the name, genre, and creator for a
+        playlist, along with all the songs that have been added to the playlist
+    5. If the user is logged in, they can update their playlist.
 
     :param pid: unique playlist id
-    :returns: that playlist's page if a match exists
+    :returns: 
         the not found page if no playlist exists with that id
-        the profile page of the user who created that playlist if 
-            they delete it.
+        that playlist's page if a match exists
+        profile page of the user who created that playlist if they delete it
     '''
     conn = dbi.connect()
+
+    # no playlist found
+    playlistInfo = playlist.get_playlist_info(conn,pid)
+    if playlistInfo == None:
+        return render_template('notFound.html',
+            type='No playlist', page_title="Playlist Not Found")
+        
+    # playlist found, so extract relevant information
+    uid = playlistInfo['created_by']
+    oldName = playlistInfo["playlist_name"]
+    submitType = request.form.get('submit')
+
+    # user deletes their own playlist
+    if (request.method == "POST" and submitType == 'delete'):
+        playlist.deletePlaylist(conn,pid)
+        flash(oldName + ' deleted successfully')
+        return redirect(url_for('user', uid = uid))
+    
+    # just display playlist information
+    nestedSongs = playlist.get_playlist_songs(conn,pid)
+    createdby = userpage.get_user_from_id(conn, uid)
+
+    if (request.method == "GET"):
+        return render_template('playlist.html', 
+                        playlistInfo=playlistInfo, 
+                        songs=nestedSongs, 
+                        page_title=playlistInfo['playlist_name'],
+                        createdby = createdby)
+
+    # user logged in and updates playlist
     if 'CAS_USERNAME' in session:
         is_logged_in = True
-
-        # link to the user's individual profile page in the navbar
-        username = session['CAS_USERNAME']
-        user_id = session['uid']
         
-        playlistInfo = playlist.get_playlist_info(conn,pid)
-        if playlistInfo == None: # playlist not found
-            return render_template('notFound.html',
-                type='No playlist', page_title="Playlist Not Found")
-        
-        # playlist found
-        nestedSongs = playlist.get_playlist_songs(conn,pid)
-        uid = playlistInfo['created_by']
-        createdby = userpage.get_user_from_id(conn, uid)
+        newName = request.form.get('playlist-name')
+        newGenre = request.form.get('playlist-genre')
 
-        if (request.method == "GET"):
+        pUser = playlistInfo["display_name"]
+        pid = playlistInfo["playlist_id"]
+
+        # update the playlist if the name is not being changed
+        if oldName == newName:
+            playlist.updatePlaylist(conn,pid,newName,newGenre)
+            # get newly updated information
+            playlistInfo = playlist.get_playlist_info(conn,pid)
+            flash(newName + '  was updated successfully')
+                
             return render_template('playlist.html', 
-                            playlistInfo=playlistInfo, 
-                            songs=nestedSongs, 
-                            page_title=playlistInfo['playlist_name'],
-                            createdby = createdby, user_id=user_id)
+                        createdby = createdby,
+                        playlistInfo=playlistInfo, 
+                        songs=nestedSongs, 
+                        page_title=playlistInfo['playlist_name'])
+        else:
+            # user is changing the name, but there cannot be multiple 
+            # playlists with the same name
+            start_transaction(conn) # ensure thread safety
 
-        else: #POST request to update own playlist
-            submitType = request.form.get('submit')
-            oldName = playlistInfo["playlist_name"]
+            # update the playlist if no other playlist exists with that new name
+            if playlist.check_unique_playlist_name(conn, newName, uid):
+                playlist.updatePlaylist(conn,pid,newName,newGenre)
+                playlistInfo = playlist.get_playlist_info(conn,pid)
+                commit_transaction(conn) # complete transaction
+                flash(newName + '  was updated successfully')
+                
+                return render_template('playlist.html', 
+                        createdby = createdby,
+                        playlistInfo=playlistInfo, 
+                        songs=nestedSongs, 
+                        page_title=playlistInfo['playlist_name'])
 
-            if (submitType == 'update'): #update playlist
-                newName = request.form.get('playlist-name')
-                newGenre = request.form.get('playlist-genre')
+            else:
+                # conflicting playlist names
+                commit_transaction(conn) # complete transaction
+                flash('Error: You already have a playlist with this name')
 
-                pUser = playlistInfo["display_name"]
-                pid = playlistInfo["playlist_id"]
-
-                # Check if we are changing the name of the playlist
-                if oldName == newName:
-                    playlist.updatePlaylist(conn,pid,newName,newGenre)
-                    # Get newly updated information
-                    playlistInfo = playlist.get_playlist_info(conn,pid)
-                    flash(newName + '  was updated successfully')
-                        
-                    return render_template('playlist.html', 
-                                createdby = createdby,
-                                playlistInfo=playlistInfo, 
-                                songs=nestedSongs, 
-                                page_title=playlistInfo['playlist_name'],
-                                user_id = uid)
-                else:
-                    # There cannot be multiple playlists with the same name
-                    start_transaction(conn) # ensure thread safety
-                    if playlist.check_unique_playlist_name(conn, newName, uid):
-                        playlist.updatePlaylist(conn,pid,newName,newGenre)
-                        playlistInfo = playlist.get_playlist_info(conn,pid)
-                        commit_transaction(conn) # complete transaction
-                        flash(newName + '  was updated successfully')
-                        
-                        return render_template('playlist.html', 
-                                createdby = createdby,
-                                playlistInfo=playlistInfo, 
-                                songs=nestedSongs, 
-                                page_title=playlistInfo['playlist_name'],
-                                user_id = uid)
-
-                    else:
-                        commit_transaction(conn) # complete transaction
-                        flash('Error: A playlist with this name already exists')
-
-                        return render_template('playlist.html', 
-                                createdby = createdby,
-                                playlistInfo=playlistInfo, 
-                                songs=nestedSongs, 
-                                page_title=playlistInfo['playlist_name'],
-                                user_id = uid)
-                        
-            else: #delete playlist
-                playlist.deletePlaylist(conn,pid)
-                flash(oldName + ' deleted successfully')
-                return redirect(url_for('user', uid = uid))
-    # what is the point of this branch
-    else: # HUH how do we get playlistInfo, nestedSongs, and createdby
-        return render_template('playlist.html', 
-                            playlistInfo=playlistInfo, 
-                            songs=nestedSongs, 
-                            page_title=playlistInfo['playlist_name'],
-                            createdby = createdby, user_id = createdby)
+                return render_template('playlist.html', 
+                        createdby = createdby,
+                        playlistInfo=playlistInfo, 
+                        songs=nestedSongs, 
+                        page_title=playlistInfo['playlist_name'])
+                
 
 @app.route('/user/<int:uid>', methods=["GET", "POST"])
 def user(uid):
     '''
     Displays a user's name, friends, and playlists.
+    Allows logged-in user to follow a friend.
     :param uid: unique id for a user
     :returns: the user's profile page
     '''
     conn = dbi.connect()
     if (request.method == 'GET'):
         if 'CAS_USERNAME' in session:
-            # information for user browsing the app
-            is_logged_in = True
-            username = session['CAS_USERNAME']
-            loggedInUser = session['uid']
-
             # information for the user whose page we are visiting
             user = userpage.get_user_from_id(conn, uid)
             friendsList = userpage.get_friends(conn, uid)
             playlists = userpage.get_user_playlists(conn, uid)
             return render_template("user.html", user= user, 
                 page_title = user['display_name'],
-                loggedInUser=loggedInUser,
-                friendsList = friendsList, playlists = playlists,
-                user_id = loggedInUser)
+                friendsList = friendsList, playlists = playlists)
         else:
-            flash('Please Log In to Access Profile Page')
+            flash('Please log in to access profile page')
             return redirect(url_for("explore"))
 
-    else:
+    else: # POST to follow friend
         friendId = request.form.get('friend')
         currentUser = request.form.get('currentUser')
         userpage.add_follow(conn,friendId,currentUser)
@@ -273,8 +264,7 @@ def editUsername(uid):
     '''
     conn = dbi.connect()
     if request.method == 'GET':
-        return render_template('editUsername.html', page_title='Edit Username',
-            user_id = uid)
+        return render_template('editUsername.html', page_title='Edit Username')
     else:
         newName = request.form.get('user-name')
         userpage.update_username(conn, uid, newName)
@@ -289,13 +279,11 @@ def addSongs():
     '''
     conn = dbi.connect()
     if 'CAS_USERNAME' in session:
-        is_logged_in = True
-        
         if request.method == 'GET':
-            user_id = session['uid']
-            return render_template('addSongs.html', page_title="Add Song",
-                user_id = user_id)
-        else:
+            return render_template('addSongs.html', page_title="Add Song")
+        
+        else: 
+            # get user-supplied information
             artistName = request.form.get('artist-name')
             albumName = request.form.get('album-name')
             songName = request.form.get('song-name')
@@ -303,7 +291,7 @@ def addSongs():
             year = request.form.get('year')
             username = session['CAS_USERNAME']
 
-            # checks if artist already in database, returns true if not in database
+            # returns true if artist is not already in database
             start_transaction(conn)
             if userpage.check_artist(conn, artistName):
                 userpage.add_artist(conn, artistName)
@@ -313,7 +301,8 @@ def addSongs():
                 flash(songName + ' has been added to coda database!')
                 commit_transaction(conn)
                 return redirect(url_for("song", sid = sid))
-            #artist already in database
+            
+            # artist already in database
             else:
                 # returns true if album is not in database
                 if userpage.check_album(conn, albumName, artistName):
@@ -350,7 +339,7 @@ def addSongs():
                         flash(songName + " has been added to coda database!")
                         return redirect(url_for("song", sid = sid))
     else:
-        flash("You need to be logged in to add to database!")
+        flash("You need to be logged in to add to the database!")
         return redirect(url_for("explore"))
 
 @app.route('/artist/<int:aid>')
@@ -362,15 +351,12 @@ def artist(aid):
     '''
     conn = dbi.connect()
     if 'CAS_USERNAME' in session:
-        is_logged_in = True
         artist = artistPage.get_artist(conn, aid)
         albumList = artistPage.get_artist_albums(conn, aid)
-        user_id = session['uid']
         return (render_template("artist.html", artist = artist, 
-            albumList = albumList, page_title = artist['artist_name'],
-            user_id = user_id))
+            albumList = albumList, page_title = artist['artist_name']))
     else:
-        flash("please log in")
+        flash("Please log in")
         return redirect(url_for("explore"))
 
 @app.route('/album/<int:aid>', methods=["GET", "POST"])
@@ -387,7 +373,6 @@ def album(aid):
     if 'CAS_USERNAME' in session:
         albumInfo = albumPage.get_album(conn, aid)
         songs = albumPage.get_songs(conn, aid)
-        user_id = session['uid']
 
         if request.method == 'GET':
             is_logged_in = True
@@ -402,7 +387,7 @@ def album(aid):
                 albumDescription=albumInfo,
                 songs=songs,
                 page_title='Album | ' + albumInfo['album_title'],
-                user_id=user_id, album_image=image_url)
+                album_image=image_url)
         else: #upload an image
             try:
                 f = request.files['pic']
@@ -419,12 +404,12 @@ def album(aid):
                     albumDescription=albumInfo,
                     songs=songs,
                     page_title='Album | ' + albumInfo['album_title'],
-                    user_id=user_id, album_image=image_url)
+                    album_image=image_url)
             except Exception as err:
                 flash('Upload failed {why}'.format(why=err))
                 return render_template('album.html',src='',nm='',albumDescription=albumInfo)
     else:
-        flash("please log in")
+        flash("Please log in")
         return redirect(url_for("explore"))
 
 @app.route('/song/<int:sid>', methods = ['GET','POST'])
@@ -441,36 +426,36 @@ def song(sid):
     '''
     conn = dbi.connect()
     song_info = songPage.get_song(conn, sid)
-    user_id = session['uid']
 
     if song_info == None: # song not found
         return render_template('notFound.html',
-            type='No song', page_title="Song Not Found", user_id=user_id)
+            type='No song', page_title="Song Not Found")
 
     else: # song found
         if 'CAS_USERNAME' in session:
-            is_logged_in = True
             username = session['CAS_USERNAME']
             userPlaylists = playlist.get_all_playlists_by_user(conn,username)
-            if request.method == 'GET': # display playlist info
+
+            # display playlist info, partitioning the user's playlists into
+            # ones with and without the specified song
+            if request.method == 'GET': 
                 # if user has not created any playlists, link to create page
                 if len(userPlaylists) == 0: 
                     return render_template('song.html', 
                         song=song_info, 
-                        sid = sid, playlists = False, loggedin = True,
-                        page_title='Song | ' + song_info['song_title'],
-                        user_id=user_id)
+                        sid = sid, playlists = False,
+                        page_title='Song | ' + song_info['song_title'])
                         
-                else: # separate the playlists the song is in from ones it's not in
+                else: 
+                    # separate the playlists the song is in from ones it's not in
                     uid = session['uid']
                     pAlreadyIn = playlist.get_playlists_with_song(conn,uid,sid)
                     pNotIn = playlist.get_playlists_without_song(conn,uid,sid)
                     return render_template('song.html', 
                         song=song_info, 
-                        sid = sid, playlists = True, loggedin = True,
+                        sid = sid, playlists = True,
                         pAlreadyIn = pAlreadyIn, pNotIn = pNotIn,
-                        page_title='Song | ' + song_info['song_title'],
-                        user_id=user_id)
+                        page_title='Song | ' + song_info['song_title'])
                 
             else: # forms to add song to a playlist, or create a playlist
                 if request.form.get('create-playlist'): 
@@ -484,33 +469,32 @@ def song(sid):
                         flash(song_info['song_title'] + ' already exists in ' + 
                             playlist.get_playlist_info(conn,pid)['playlist_name'])
                         commit_transaction(conn)
-                        return redirect(url_for('song',sid = sid))
+                        return redirect(url_for('song', sid=sid))
                     else:
                         playlist.addSongToPlaylist(conn,pid,sid)
                         commit_transaction(conn)
-                        return redirect(url_for('playlistPage', pid = pid))
+                        return redirect(url_for('playlistPage', pid=pid))
         else:
             flash('Log in to add song to playlist!')
             return render_template('song.html', 
                         song=song_info, 
-                        sid = sid, playlists = False, loggedin = True,
-                        page_title='Song | ' + song_info['song_title'],
-                        user_id=user_id)
+                        sid=sid, playlists=False,
+                        page_title='Song | ' + song_info['song_title'])
 
 @app.route('/playlist/create', methods = ['GET','POST'])
 def createPlaylist():
-    '''Returns rendered insert template if get method, or if
+    '''
+    Returns rendered insert template if get method, or if
     post method, creates a playlist and flashes a link to 
-    the new playlist'''
+    the new playlist
+    '''
     conn = dbi.connect()
-    if 'CAS_USERNAME' in session:
-        is_logged_in = True
-        username = session['CAS_USERNAME']
+    if 'uid' in session:
         user_id = session['uid']
 
         if request.method == 'GET':
             return render_template('createPlaylist.html', 
-                page_title="Create Playlist", user_id=user_id)
+                page_title="Create Playlist")
                                     
         else: #inserting movie action, making sure input is valid
             pName = request.form.get('playlist-name')
@@ -521,7 +505,6 @@ def createPlaylist():
             if playlist.check_unique_playlist_name(conn, pName, user_id):
                 playlist.createPlaylist(conn,pName,pGenre, user_id)
                 pid = userpage.get_playlist(conn, pName, user_id)['playlist_id']
-                print(pid)
                 flash(pName + ' has been created!')
                 commit_transaction(conn) # complete transaction
                 return redirect(url_for('playlistPage', pid = pid))
@@ -548,16 +531,14 @@ def genre(genreName):
     conn = dbi.connect()
     playlists = playlist.playlists_by_genre(conn, genreName)
     songs = songPage.songs_by_genre(conn, genreName)
-    user_id = session['uid']
 
     if playlists == None and songs == None: # genre not found
         return render_template('notFound.html',
-            type='No genre', page_title="Genre Not Found",
-            user_id=user_id)
+            type='No genre', page_title="Genre Not Found")
     
     return render_template('genre.html',
             page_title=genreName, genre=genreName.title(),
-            playlists=playlists, songs=songs, user_id=user_id)
+            playlists=playlists, songs=songs)
 
 @app.route('/query/', methods=['GET'])
 def query():
@@ -574,13 +555,12 @@ def query():
     userMatches = userpage.search_user(conn, query)
     playlistMatches = playlist.get_similar_playlists(conn, query)
     artistMatches = artistPage.search_artist(conn, query)
-    user_id = session['uid']
 
     # no matches
     if (not albumMatches and not songMatches and not artistMatches
         and not userMatches and not playlistMatches):
         return render_template('notFound.html', type='Nothing',
-        page_title="No matches", user_id=user_id)
+        page_title="No matches")
 
     # one album matches
     elif (len(albumMatches) == 1 and not songMatches and not artistMatches
@@ -596,13 +576,13 @@ def query():
     elif (len(userMatches) == 1 and not songMatches and not albumMatches 
         and not playlistMatches and not artistMatches):
         return render_template("user.html", user = userMatches[0],
-            page_title = userMatches[0]['display_name'], user_id=user_id)
+            page_title = userMatches[0]['display_name'])
 
     # one playlist matches
     elif (len(playlistMatches) == 1 and not songMatches and not artistMatches
         and not albumMatches and not playlistMatches):
         return render_template("playlist.html", playlistInfo=playlistMatches,
-            page_title = playlistMatches['playlist_name'], user_id=user_id)
+            page_title = playlistMatches['playlist_name'])
 
     # one artist matches
     elif (len(artistMatches) == 1 and not songMatches and not userMatches
@@ -610,8 +590,7 @@ def query():
         artist = artistMatches[0]
         artistAlbums = artistPage.get_artist_albums(conn, artist['artist_id'])
         return render_template("artist.html", artist=artist, 
-            albumList=artistAlbums, page_title=artist['artist_name'], 
-            user_id=user_id)
+            albumList=artistAlbums, page_title=artist['artist_name'])
 
     # multiple matches
     else:
@@ -650,7 +629,7 @@ def query():
         return render_template('multiple.html', 
             albums=albums, songs=songs, users=users,
             playlists=playlists, artists=artists, name=query, 
-            page_title="Mutliple Results Found", user_id=user_id)
+            page_title="Mutliple Results Found")
 
 
 @app.before_first_request

@@ -8,10 +8,10 @@
     <div class = "editUser">
         {% if session.CAS_USERNAME == user.username %}
             <button type="button" class = "button" onclick="window.location.href= 
-                 '{{ url_for('editUsername', uid = user.user_id) }}';">Edit User</button>
+                 '{{ url_for('editUsername', uid = session.uid) }}';">Edit User</button>
         {% else %}
-                <button type="button" class = "button" id='follow-button' 
-                data-friend={{user.user_id}} data-current={{loggedInUser}}>Follow</button>
+                <button type="button" class="button" id='follow-button' 
+                data-friend={{user.user_id}} data-current={{session.uid}}>Follow</button>
         {% endif %} 
     </div>
 </div>
