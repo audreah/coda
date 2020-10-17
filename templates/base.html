@@ -1,3 +1,7 @@
+<!-- Authors: Audrea Huang, Liz Huang, Danya Gao
+     Version: Fall T1 2020
+     Base template with stylesheet, flash messages, and navbar  -->
+
 <!doctype html>
 <html lang='en'>
 <head>
@@ -36,8 +40,6 @@
         <input class = "button" type="submit" value="search"></p>
       </form></div>
 
-      
-        
         {% if session.CAS_USERNAME %}
         <div class="session">
           <form method="GET" action="{{url_for('cas.logout')}}">

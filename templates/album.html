@@ -1,4 +1,4 @@
-<!-- Author: Audrea Huang - Fall T1 2020 -->
+<!-- Authors: Audrea Huang, Danya Gao - Fall T1 2020 -->
 <!-- Template for describing information about an album.
 Lists the album title, artist, release year, and songs. -->
 {% extends "base.html" %}
@@ -7,7 +7,8 @@ Lists the album title, artist, release year, and songs. -->
 
 <H1 class='album'> {{albumDescription.album_title}} </H1>
 <p>Title: {{albumDescription.album_title}}</p>
-<p>Artist: <a href= "{{ url_for('artist', aid = albumDescription.artist_id) }}">{{albumDescription.artist_name}}</a></p> 
+<p>Artist: <a href= "{{ url_for('artist', aid = albumDescription.artist_id) }}">
+    {{albumDescription.artist_name}}</a></p> 
 {% if albumDescription.release_year != None %}
     {% if albumDescription.release_year|length > 0 %}
         <p>Release Year: {{albumDescription.release_year}}</p> 
@@ -18,13 +19,16 @@ Lists the album title, artist, release year, and songs. -->
 <p>
     <ul>
         {% for song in songs %} 
-        <li><a href="{{ url_for('song', sid=song.song_id)}}">{{song.song_title}}<a></li>
+        <li><a href="{{ url_for('song', sid=song.song_id)}}">
+            {{song.song_title}}<a></li>
         {% endfor %}
     </ul>
 </p>
 {% if album_image %}
-<p>Album Art:</p>
-<img src = "{{url_for('static',filename=album_image['filename'])}}" alt = 'Album Image' style="width:300px;height:300px;"> 
+    <p>Album Art:</p>
+    <img src = "{{url_for('static',filename=album_image['filename'])}}" 
+        alt = 'Album Image' style="width:300px;height:300px;"> 
+
 {% else %}
 <p>Upload new album art here:
     <form method="post" action="" enctype="multipart/form-data">
@@ -32,6 +36,5 @@ Lists the album title, artist, release year, and songs. -->
         <p><input type="submit" value="upload"></p>
     </form>
 {% endif %}
-
 
 {% endblock %}
