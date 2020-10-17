@@ -124,8 +124,8 @@ def check_unique_playlist_name(conn, pName, uid):
         from coda_playlist 
         where playlist_name = %s and created_by = %s'''
     curs.execute(sql,[pName,uid])
-    res = curs.fetchall()
-    return res[0][0] == 0
+    res = curs.fetchone()
+    return res[0] == 0
 
 def updatePlaylist(conn,pid,newName,newGenre):
     """
@@ -247,4 +247,3 @@ if __name__ == '__main__':
     dbi.cache_cnf()   # defaults to ~/.my.cnf
     dbi.use('coda_db')
     conn = dbi.connect()
-    print(get_playlist_song_ids(conn, 3))
