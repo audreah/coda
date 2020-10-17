@@ -383,7 +383,7 @@ def album(aid):
 
     :param pid: a unique album id from the coda_album table
     :returns: not found page if album does not exist in the database
-            the desired album's indiviual page otherwise
+            the desired album's individual page otherwise
     '''
     if 'CAS_USERNAME' not in session:
         flash("Please log in to view album information")
@@ -645,7 +645,7 @@ def query():
         return render_template('multiple.html', 
             albums=albums, songs=songs, users=users,
             playlists=playlists, artists=artists, name=query, 
-            page_title="Mutliple Results Found")
+            page_title="Multiple Results Found")
 
 
 @app.before_first_request
