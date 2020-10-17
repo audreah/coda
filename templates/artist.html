@@ -8,9 +8,14 @@
 {% for album in albumList %}
 
 <li>
-   <a href= "{{ url_for('album', aid = album.album_id) }}">{{ album.album_title }} ({{ album.release_year }})</a> 
+   <a href= "{{ url_for('album', aid = album.album_id) }}">{{ album.album_title }} 
+      {% if album.release_year != None %}
+         {% if album.release_year|length > 0 %}
+            ({{ album.release_year }})
+         {% endif %}
+      {% endif %}
+   </a> 
 </li>
-    
 
 {% endfor %}
 

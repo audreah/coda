@@ -290,13 +290,14 @@ def addSongs():
             genre = request.form.get('genre')
             year = request.form.get('year')
             username = session['CAS_USERNAME']
+            uid = session['uid']
 
             # returns true if artist is not already in database
             start_transaction(conn)
             if userpage.check_artist(conn, artistName):
                 userpage.add_artist(conn, artistName)
                 userpage.add_album(conn, albumName, artistName, year)
-                userpage.add_song(conn, songName, genre, albumName, username)
+                userpage.add_song(conn, songName, genre, albumName, uid)
                 sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
                 flash(songName + ' has been added to coda database!')
                 commit_transaction(conn)
@@ -310,7 +311,7 @@ def addSongs():
 
                     # returns true if song is not in database
                     if userpage.check_song(conn, songName, albumName):
-                        userpage.add_song(conn, songName, genre, albumName, username)
+                        userpage.add_song(conn, songName, genre, albumName, uid)
                         sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
                         flash(songName + ' has been added to coda database!')
                         commit_transaction(conn)
@@ -327,13 +328,13 @@ def addSongs():
                 else:
                     if(userpage.check_album_year(conn, albumName, artistName)['release_year'] == None):
                         userpage.update_release(conn, year, albumName, artistName)
-                        userpage.add_song(conn, songName, genre, albumName, username)
+                        userpage.add_song(conn, songName, genre, albumName, uid)
                         sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
                         commit_transaction(conn)
                         flash(songName + " has been added to coda database!")
                         return redirect(url_for("song", sid = sid))
                     else:
-                        userpage.add_song(conn, songName, genre, albumName, username)
+                        userpage.add_song(conn, songName, genre, albumName, uid)
                         sid = userpage.get_song_id(conn, songName, albumName, artistName)['song_id']
                         commit_transaction(conn)
                         flash(songName + " has been added to coda database!")

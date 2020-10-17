@@ -73,7 +73,8 @@ def get_genres(conn):
     curs.execute('''select distinct genre from coda_song union (
             select distinct playlist_genre from coda_playlist)''')
     genreDictList = curs.fetchall()
-    genresDB = [genreDict['genre'] for genreDict in genreDictList]
+    genresDB = [genreDict['genre'] for genreDict in genreDictList
+        if genreDict['genre'].strip() != ''] # don't include empty genres
 
     # collect distinct genre names
     genres = []
@@ -118,6 +119,6 @@ if __name__ == '__main__':
     # genres = get_genres(conn)
     # print(genres)
 
-    countrySongs = songs_by_genre(conn, 'Christmas')
-    print(countrySongs)
+    # countrySongs = songs_by_genre(conn, 'Christmas')
+    # print(countrySongs)
     
