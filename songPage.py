@@ -1,6 +1,7 @@
 '''
 Authors: Audrea Huang
-Version: Fall T1 2020 | 13 Oct 2020
+Version: Fall T1 2020 | 17 Oct 2020
+Extract information from coda_db relevant to songs
 '''
 
 import cs304dbi as dbi

@@ -127,22 +127,28 @@ def playlistPage(pid):
     of information we need to extract from the database and limit function
     calls.
 
-    1. Extract information for the specified playlist
-    2. If that playlist is not found, render template for the Not Found page
-    3. If the logged-in user wants to delete their own playlist, delete it and
+    1. Verify that the user is logged in, redirecting to the login page if not
+    2. Extract information for the specified playlist
+    3. If that playlist is not found, render template for the Not Found page
+    4. If the logged-in user wants to delete their own playlist, delete it and
         redirect to their user page
-    4. Users who aren't logged in are also allowed to view playlist information
-        If a playlist is found for the GET request (regardless of whether or 
-        not the user is logged in), display the name, genre, and creator for a
-        playlist, along with all the songs that have been added to the playlist
-    5. If the user is logged in, they can update their playlist.
+    5. If a playlist is found for the GET request, display the name, genre, 
+        and creator for a playlist, along with all the songs that have been 
+        added to the playlist
+    6. If the user is logged in, they can update their playlist.
 
     :param pid: unique playlist id
     :returns: 
+        the login page if the user is not logged in
         the not found page if no playlist exists with that id
         that playlist's page if a match exists
         profile page of the user who created that playlist if they delete it
     '''
+    # restrict access if not logged in
+    if 'CAS_USERNAME' not in session:
+        flash('Please log in to access playlist information')
+        return redirect(url_for("explore"))
+    
     conn = dbi.connect()
 
     # no playlist found
@@ -162,68 +168,64 @@ def playlistPage(pid):
         flash(oldName + ' deleted successfully')
         return redirect(url_for('user', uid = uid))
     
-    # just display playlist information
+    # display playlist information
     nestedSongs = playlist.get_playlist_songs(conn,pid)
     createdby = userpage.get_user_from_id(conn, uid)
 
     if (request.method == "GET"):
         return render_template('playlist.html', 
-                        playlistInfo=playlistInfo, 
-                        songs=nestedSongs, 
-                        page_title=playlistInfo['playlist_name'],
-                        createdby = createdby)
+                    playlistInfo=playlistInfo, 
+                    songs=nestedSongs, 
+                    page_title=playlistInfo['playlist_name'],
+                    createdby = createdby)
 
-    # user logged in and updates playlist
-    if 'CAS_USERNAME' in session:
-        is_logged_in = True
-        
-        newName = request.form.get('playlist-name')
-        newGenre = request.form.get('playlist-genre')
+    # user updates playlist
+    newName = request.form.get('playlist-name')
+    newGenre = request.form.get('playlist-genre')
 
-        pUser = playlistInfo["display_name"]
-        pid = playlistInfo["playlist_id"]
+    pUser = playlistInfo["display_name"]
+    pid = playlistInfo["playlist_id"]
 
-        # update the playlist if the name is not being changed
-        if oldName == newName:
+    # update the playlist if the name is not being changed
+    if oldName == newName:
+        playlist.updatePlaylist(conn,pid,newName,newGenre)
+        # get newly updated information
+        playlistInfo = playlist.get_playlist_info(conn,pid)
+        flash(newName + '  was updated successfully')
+            
+        return render_template('playlist.html', 
+                    createdby = createdby,
+                    playlistInfo=playlistInfo, 
+                    songs=nestedSongs, 
+                    page_title=playlistInfo['playlist_name'])
+    else:
+        # user is changing the name, but there cannot be multiple 
+        # playlists with the same name
+        start_transaction(conn) # ensure thread safety
+
+        # update the playlist if no other playlist exists with that new name
+        if playlist.check_unique_playlist_name(conn, newName, uid):
             playlist.updatePlaylist(conn,pid,newName,newGenre)
-            # get newly updated information
             playlistInfo = playlist.get_playlist_info(conn,pid)
+            commit_transaction(conn) # complete transaction
             flash(newName + '  was updated successfully')
-                
+            
             return render_template('playlist.html', 
-                        createdby = createdby,
-                        playlistInfo=playlistInfo, 
-                        songs=nestedSongs, 
-                        page_title=playlistInfo['playlist_name'])
+                    createdby = createdby,
+                    playlistInfo=playlistInfo, 
+                    songs=nestedSongs, 
+                    page_title=playlistInfo['playlist_name'])
+
         else:
-            # user is changing the name, but there cannot be multiple 
-            # playlists with the same name
-            start_transaction(conn) # ensure thread safety
+            # conflicting playlist names
+            commit_transaction(conn) # complete transaction
+            flash('Error: You already have a playlist with this name')
 
-            # update the playlist if no other playlist exists with that new name
-            if playlist.check_unique_playlist_name(conn, newName, uid):
-                playlist.updatePlaylist(conn,pid,newName,newGenre)
-                playlistInfo = playlist.get_playlist_info(conn,pid)
-                commit_transaction(conn) # complete transaction
-                flash(newName + '  was updated successfully')
-                
-                return render_template('playlist.html', 
-                        createdby = createdby,
-                        playlistInfo=playlistInfo, 
-                        songs=nestedSongs, 
-                        page_title=playlistInfo['playlist_name'])
-
-            else:
-                # conflicting playlist names
-                commit_transaction(conn) # complete transaction
-                flash('Error: You already have a playlist with this name')
-
-                return render_template('playlist.html', 
-                        createdby = createdby,
-                        playlistInfo=playlistInfo, 
-                        songs=nestedSongs, 
-                        page_title=playlistInfo['playlist_name'])
-                
+            return render_template('playlist.html', 
+                    createdby = createdby,
+                    playlistInfo=playlistInfo, 
+                    songs=nestedSongs, 
+                    page_title=playlistInfo['playlist_name'])
 
 @app.route('/user/<int:uid>', methods=["GET", "POST"])
 def user(uid):
@@ -357,7 +359,7 @@ def artist(aid):
         return (render_template("artist.html", artist = artist, 
             albumList = albumList, page_title = artist['artist_name']))
     else:
-        flash("Please log in")
+        flash("Please log in to view artist information")
         return redirect(url_for("explore"))
 
 @app.route('/album/<int:aid>', methods=["GET", "POST"])
@@ -370,48 +372,50 @@ def album(aid):
     :returns: not found page if album does not exist in the database
             the desired album's indiviual page otherwise
     '''
-    conn = dbi.connect()
-    if 'CAS_USERNAME' in session:
-        albumInfo = albumPage.get_album(conn, aid)
-        songs = albumPage.get_songs(conn, aid)
+    if 'CAS_USERNAME' not in session:
+        flash("Please log in to view album information")
+        return redirect(url_for("explore"))
 
-        if request.method == 'GET':
-            is_logged_in = True
+    conn = dbi.connect()
+    albumInfo = albumPage.get_album(conn, aid)
+    songs = albumPage.get_songs(conn, aid)
+
+    if request.method == 'GET':
+        is_logged_in = True
+        image_url = imageupload.get_image_by_album(conn,albumInfo['album_id'])
+        if albumInfo == None: # album not found
+            return render_template('notFound.html',
+                type='No album', page_title="Album Not Found",
+                user_id=user_id)
+        
+        # album found
+        return render_template('album.html', 
+            albumDescription=albumInfo,
+            songs=songs,
+            page_title='Album | ' + albumInfo['album_title'],
+            album_image=image_url)
+
+    else: #upload an image
+        try:
+            f = request.files['pic']
+            user_filename = f.filename
+            ext = user_filename.split('.')[-1]
+            filename = secure_filename('{}.{}'.format('album'+str(aid),ext))
+            pathname = os.path.join(app.config['UPLOADS'],filename)
+            f.save(pathname)
+
+            insertimagefiles.insert_picfile(conn,pathname,filename,aid)
             image_url = imageupload.get_image_by_album(conn,albumInfo['album_id'])
-            if albumInfo == None: # album not found
-                return render_template('notFound.html',
-                    type='No album', page_title="Album Not Found",
-                    user_id=user_id)
-            
-            # album found
+            flash('Upload successful')
             return render_template('album.html', 
                 albumDescription=albumInfo,
                 songs=songs,
                 page_title='Album | ' + albumInfo['album_title'],
                 album_image=image_url)
-        else: #upload an image
-            try:
-                f = request.files['pic']
-                user_filename = f.filename
-                ext = user_filename.split('.')[-1]
-                filename = secure_filename('{}.{}'.format('album'+str(aid),ext))
-                pathname = os.path.join(app.config['UPLOADS'],filename)
-                f.save(pathname)
 
-                insertimagefiles.insert_picfile(conn,pathname,filename,aid)
-                image_url = imageupload.get_image_by_album(conn,albumInfo['album_id'])
-                flash('Upload successful')
-                return render_template('album.html', 
-                    albumDescription=albumInfo,
-                    songs=songs,
-                    page_title='Album | ' + albumInfo['album_title'],
-                    album_image=image_url)
-            except Exception as err:
-                flash('Upload failed {why}'.format(why=err))
-                return render_template('album.html',src='',nm='',albumDescription=albumInfo)
-    else:
-        flash("Please log in")
-        return redirect(url_for("explore"))
+        except Exception as err:
+            flash('Upload failed {why}'.format(why=err))
+            return render_template('album.html',src='',nm='',albumDescription=albumInfo)
 
 @app.route('/song/<int:sid>', methods = ['GET','POST'])
 def song(sid):
@@ -477,11 +481,8 @@ def song(sid):
                         commit_transaction(conn)
                         return redirect(url_for('playlistPage', pid=pid))
         else:
-            flash('Log in to add song to playlist!')
-            return render_template('song.html', 
-                        song=song_info, 
-                        sid=sid, playlists=False,
-                        page_title='Song | ' + song_info['song_title'])
+            flash('Log in to view song and add to playlists!')
+            return redirect(url_for('explore'))
 
 @app.route('/playlist/create', methods = ['GET','POST'])
 def createPlaylist():

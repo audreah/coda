@@ -1,5 +1,6 @@
 '''
 Authors: Danya Gao, Audrea Huang, Liz Huang
+CS304 Fall 2020 T1
 Gets information about playlists from the coda_db database
 '''
 

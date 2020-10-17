@@ -1,5 +1,6 @@
 # Liz Huang, Audrea Huang, Danya Gao
-# Coda Project
+# CS304 Fall 2020 T1
+# Extracting information relevant to artists
 
 import cs304dbi as dbi;
 

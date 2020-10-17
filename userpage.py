@@ -1,5 +1,6 @@
 # Liz Huang, Audrea Huang, Danya Gao
-# Coda Project
+# CS304 Fall 2020 T1 | Coda
+# Extracting information from coda_db relevant to users
 
 import cs304dbi as dbi;
 
