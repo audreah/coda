@@ -14,11 +14,19 @@ Lists the album title, artist, release year, and songs. -->
 <p>
     <ul>
         {% for song in songs %} 
-        <li><a href="{{ url_for('song', sid=song.song_id)}}">{{song.song_title}}</li>
+        <li><a href="{{ url_for('song', sid=song.song_id)}}">{{song.song_title}}<a></li>
         {% endfor %}
     </ul>
 </p>
-
-
+{% if album_image %}
+<p>Album Art:</p>
+<img src = "{{url_for('static',filename=album_image['filename'])}}" alt = 'Album Image' style="width:300px;height:300px;"> 
+{% else %}
+{% endif %}
+        <p>Upload new album art here:
+        <form method="post" action="" enctype="multipart/form-data">
+            <p><label>Image: <input type="file" name="pic"></label></p>
+            <p><input type="submit" value="upload"></p>
+        </form>
 
 {% endblock %}

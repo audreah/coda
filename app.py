@@ -16,7 +16,7 @@ import cs304dbi as dbi
 
 # import cs304dbi_sqlite3 as dbi
 
-import random, playlist, albumPage, songPage, userpage, artistPage
+import random,playlist,albumPage,songPage,userpage,artistPage,imageupload,insertimagefiles
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -27,6 +27,10 @@ app.secret_key = ''.join([ random.choice(('ABCDEFGHIJKLMNOPQRSTUVXYZ' +
 
 # This gets us better error messages for certain common request errors
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
+
+# file upload
+app.config['UPLOADS'] = 'static'
+app.config['MAX_CONTENT_LENGTH'] = 1*1024*1024 # 1 MB
 
 # set up CAS
 from flask_cas import CAS
@@ -381,22 +385,43 @@ def album(aid):
     '''
     conn = dbi.connect()
     if 'CAS_USERNAME' in session:
-        is_logged_in = True
         albumInfo = albumPage.get_album(conn, aid)
         songs = albumPage.get_songs(conn, aid)
         user_id = session['uid']
+        image_url = imageupload.get_image_by_album(conn,albumInfo['album_id'])
 
-        if albumInfo == None: # album not found
-            return render_template('notFound.html',
-                type='No album', page_title="Album Not Found",
-                user_id=user_id)
-        
-        # album found
-        return render_template('album.html', 
-            albumDescription=albumInfo,
-            songs=songs,
-            page_title='Album | ' + albumInfo['album_title'],
-            user_id=user_id)
+        if request.method == 'GET':
+            is_logged_in = True
+            if albumInfo == None: # album not found
+                return render_template('notFound.html',
+                    type='No album', page_title="Album Not Found",
+                    user_id=user_id)
+            
+            # album found
+            return render_template('album.html', 
+                albumDescription=albumInfo,
+                songs=songs,
+                page_title='Album | ' + albumInfo['album_title'],
+                user_id=user_id, album_image=image_url)
+        else: #upload an image
+            try:
+                f = request.files['pic']
+                user_filename = f.filename
+                ext = user_filename.split('.')[-1]
+                filename = secure_filename('{}.{}'.format('album'+str(aid),ext))
+                pathname = os.path.join(app.config['UPLOADS'],filename)
+                f.save(pathname)
+
+                insertimagefiles.insert_picfile(conn,pathname,filename,aid)
+                flash('Upload successful')
+                return render_template('album.html', 
+                    albumDescription=albumInfo,
+                    songs=songs,
+                    page_title='Album | ' + albumInfo['album_title'],
+                    user_id=user_id, album_image=image_url)
+            except Exception as err:
+                flash('Upload failed {why}'.format(why=err))
+                return render_template('album.html',src='',nm='',albumDescription=albumInfo)
     else:
         flash("please log in")
         return redirect(url_for("explore"))
