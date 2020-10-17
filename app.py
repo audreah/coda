@@ -388,10 +388,10 @@ def album(aid):
         albumInfo = albumPage.get_album(conn, aid)
         songs = albumPage.get_songs(conn, aid)
         user_id = session['uid']
-        image_url = imageupload.get_image_by_album(conn,albumInfo['album_id'])
 
         if request.method == 'GET':
             is_logged_in = True
+            image_url = imageupload.get_image_by_album(conn,albumInfo['album_id'])
             if albumInfo == None: # album not found
                 return render_template('notFound.html',
                     type='No album', page_title="Album Not Found",
@@ -413,6 +413,7 @@ def album(aid):
                 f.save(pathname)
 
                 insertimagefiles.insert_picfile(conn,pathname,filename,aid)
+                image_url = imageupload.get_image_by_album(conn,albumInfo['album_id'])
                 flash('Upload successful')
                 return render_template('album.html', 
                     albumDescription=albumInfo,
