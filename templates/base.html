@@ -41,7 +41,7 @@
           </form>
         </div> 
           
-        <div class="profilePage"><a href = "{{ url_for('user', uid = user_id ) }}" style = "text-decoration: none">My Profile</a></div>
+        <div class="profilePage"><a href = "{{ url_for('user', uid = session.uid ) }}" style = "text-decoration: none">My Profile</a></div>
           
         {% else %}
         <div class="session">

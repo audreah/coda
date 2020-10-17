@@ -45,6 +45,7 @@ def logged_in():
     """ Redirects to the explore page if logged in. """
     conn = dbi.connect()
     username = session['CAS_USERNAME']
+    # store uid in session
     session['uid'] = userpage.get_userid_from_username(conn,username)
     user_id = session['uid']
     
@@ -96,15 +97,9 @@ def explore():
         print(k,' => ',session[k])
     if '_CAS_TOKEN' in session:
         token = session['_CAS_TOKEN']
-    if 'CAS_ATTRIBUTES' in session:
-        attribs = session['CAS_ATTRIBUTES']
-        print('CAS_attributes: ')
-        for k in attribs:
-            print('\t',k,' => ',attribs[k])
     if 'CAS_USERNAME' in session:
         is_logged_in = True
         username = session['CAS_USERNAME']
-        uid = userpage.get_userid_from_username(conn,username)
         print(('CAS_USERNAME is: ',username))
     else:
         is_logged_in = False
@@ -118,111 +113,115 @@ def explore():
         is_logged_in = True
         return render_template('main.html',page_title='Home',genres=genres,
                            username=username,
-                           is_logged_in=is_logged_in,
-                           cas_attributes=session.get('CAS_ATTRIBUTES'),
-                           user_id=uid)
+                           is_logged_in=is_logged_in)
     else:
+        flash("Please sign in")
         return render_template('login.html')
 
 @app.route('/playlist/<int:pid>', methods=["GET", "POST"]) 
 def playlistPage(pid):
     '''
-    Displays name, genre, and creator for a playlist, along with all the
-    songs that have been added to the playlist.
+    playlistPage follows the logic outlined below in order to reduce the amount
+    of information we need to extract from the database and limit function
+    calls.
+
+    1. Extract information for the specified playlist
+    2. If that playlist is not found, render template for the Not Found page
+    3. If the logged-in user wants to delete their own playlist, delete it and
+        redirect to their user page
+    4. Users who aren't logged in are also allowed to view playlist information
+        If a playlist is found for the GET request (regardless of whether or 
+        not the user is logged in), display the name, genre, and creator for a
+        playlist, along with all the songs that have been added to the playlist
+    5. If the user is logged in, they can update their playlist.
 
     :param pid: unique playlist id
-    :returns: that playlist's page if a match exists
+    :returns: 
         the not found page if no playlist exists with that id
-        the profile page of the user who created that playlist if 
-            they delete it.
+        that playlist's page if a match exists
+        profile page of the user who created that playlist if they delete it
     '''
     conn = dbi.connect()
+
+    # no playlist found
+    playlistInfo = playlist.get_playlist_info(conn,pid)
+    if playlistInfo == None:
+        return render_template('notFound.html',
+            type='No playlist', page_title="Playlist Not Found")
+        
+    # playlist found, so extract relevant information
+    uid = playlistInfo['created_by']
+    oldName = playlistInfo["playlist_name"]
+    submitType = request.form.get('submit')
+
+    # user deletes their own playlist
+    if (request.method == "POST" and submitType == 'delete'):
+        playlist.deletePlaylist(conn,pid)
+        flash(oldName + ' deleted successfully')
+        return redirect(url_for('user', uid = uid))
+    
+    # just display playlist information
+    nestedSongs = playlist.get_playlist_songs(conn,pid)
+    createdby = userpage.get_user_from_id(conn, uid)
+
+    if (request.method == "GET"):
+        return render_template('playlist.html', 
+                        playlistInfo=playlistInfo, 
+                        songs=nestedSongs, 
+                        page_title=playlistInfo['playlist_name'],
+                        createdby = createdby)
+
+    # user logged in and updates playlist
     if 'CAS_USERNAME' in session:
         is_logged_in = True
-
-        # link to the user's individual profile page in the navbar
-        username = session['CAS_USERNAME']
-        user_id = session['uid']
         
-        playlistInfo = playlist.get_playlist_info(conn,pid)
-        if playlistInfo == None: # playlist not found
-            return render_template('notFound.html',
-                type='No playlist', page_title="Playlist Not Found")
-        
-        # playlist found
-        nestedSongs = playlist.get_playlist_songs(conn,pid)
-        uid = playlistInfo['created_by']
-        createdby = userpage.get_user_from_id(conn, uid)
+        newName = request.form.get('playlist-name')
+        newGenre = request.form.get('playlist-genre')
 
-        if (request.method == "GET"):
+        pUser = playlistInfo["display_name"]
+        pid = playlistInfo["playlist_id"]
+
+        # update the playlist if the name is not being changed
+        if oldName == newName:
+            playlist.updatePlaylist(conn,pid,newName,newGenre)
+            # get newly updated information
+            playlistInfo = playlist.get_playlist_info(conn,pid)
+            flash(newName + '  was updated successfully')
+                
             return render_template('playlist.html', 
-                            playlistInfo=playlistInfo, 
-                            songs=nestedSongs, 
-                            page_title=playlistInfo['playlist_name'],
-                            createdby = createdby, user_id=user_id)
+                        createdby = createdby,
+                        playlistInfo=playlistInfo, 
+                        songs=nestedSongs, 
+                        page_title=playlistInfo['playlist_name'])
+        else:
+            # user is changing the name, but there cannot be multiple 
+            # playlists with the same name
+            start_transaction(conn) # ensure thread safety
 
-        else: #POST request to update own playlist
-            submitType = request.form.get('submit')
-            oldName = playlistInfo["playlist_name"]
+            # update the playlist if no other playlist exists with that new name
+            if playlist.check_unique_playlist_name(conn, newName, uid):
+                playlist.updatePlaylist(conn,pid,newName,newGenre)
+                playlistInfo = playlist.get_playlist_info(conn,pid)
+                commit_transaction(conn) # complete transaction
+                flash(newName + '  was updated successfully')
+                
+                return render_template('playlist.html', 
+                        createdby = createdby,
+                        playlistInfo=playlistInfo, 
+                        songs=nestedSongs, 
+                        page_title=playlistInfo['playlist_name'])
 
-            if (submitType == 'update'): #update playlist
-                newName = request.form.get('playlist-name')
-                newGenre = request.form.get('playlist-genre')
+            else:
+                # conflicting playlist names
+                commit_transaction(conn) # complete transaction
+                flash('Error: You already have a playlist with this name')
 
-                pUser = playlistInfo["display_name"]
-                pid = playlistInfo["playlist_id"]
-
-                # Check if we are changing the name of the playlist
-                if oldName == newName:
-                    playlist.updatePlaylist(conn,pid,newName,newGenre)
-                    # Get newly updated information
-                    playlistInfo = playlist.get_playlist_info(conn,pid)
-                    flash(newName + '  was updated successfully')
-                        
-                    return render_template('playlist.html', 
-                                createdby = createdby,
-                                playlistInfo=playlistInfo, 
-                                songs=nestedSongs, 
-                                page_title=playlistInfo['playlist_name'],
-                                user_id = uid)
-                else:
-                    # There cannot be multiple playlists with the same name
-                    start_transaction(conn) # ensure thread safety
-                    if playlist.check_unique_playlist_name(conn, newName, uid):
-                        playlist.updatePlaylist(conn,pid,newName,newGenre)
-                        playlistInfo = playlist.get_playlist_info(conn,pid)
-                        commit_transaction(conn) # complete transaction
-                        flash(newName + '  was updated successfully')
-                        
-                        return render_template('playlist.html', 
-                                createdby = createdby,
-                                playlistInfo=playlistInfo, 
-                                songs=nestedSongs, 
-                                page_title=playlistInfo['playlist_name'],
-                                user_id = uid)
-
-                    else:
-                        commit_transaction(conn) # complete transaction
-                        flash('Error: A playlist with this name already exists')
-
-                        return render_template('playlist.html', 
-                                createdby = createdby,
-                                playlistInfo=playlistInfo, 
-                                songs=nestedSongs, 
-                                page_title=playlistInfo['playlist_name'],
-                                user_id = uid)
-                        
-            else: #delete playlist
-                playlist.deletePlaylist(conn,pid)
-                flash(oldName + ' deleted successfully')
-                return redirect(url_for('user', uid = uid))
-    # what is the point of this branch
-    else: # HUH how do we get playlistInfo, nestedSongs, and createdby
-        return render_template('playlist.html', 
-                            playlistInfo=playlistInfo, 
-                            songs=nestedSongs, 
-                            page_title=playlistInfo['playlist_name'],
-                            createdby = createdby, user_id = createdby)
+                return render_template('playlist.html', 
+                        createdby = createdby,
+                        playlistInfo=playlistInfo, 
+                        songs=nestedSongs, 
+                        page_title=playlistInfo['playlist_name'])
+                
 
 @app.route('/user/<int:uid>', methods=["GET", "POST"])
 def user(uid):
