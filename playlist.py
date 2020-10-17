@@ -44,19 +44,18 @@ def multiple_playlists(conn,pid_list):
     curs.execute(sql,[pid_list])
     return curs.fetchall()
 
-def get_all_playlists_by_user(conn,username):
+def get_all_playlists_by_user(conn,uid):
     """
     Given a connection object and a uid, returns all playlists in the 
     database created by that user
     :param conn: database connection
-    :param username: str | account username
+    :param uid: int | account id
     :returns: list of dictionaries with information for that user's playlists
     """
     curs = dbi.dict_cursor(conn)
     sql = '''select * from coda_playlist
-            where created_by = (
-                select user_id from coda_user where username = %s)'''
-    curs.execute(sql,[username])
+            where created_by = %s'''
+    curs.execute(sql,[uid])
     return curs.fetchall()
 
 def get_similar_playlists(conn,query):

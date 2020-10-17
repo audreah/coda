@@ -432,9 +432,10 @@ def song(sid):
             type='No song', page_title="Song Not Found")
 
     else: # song found
-        if 'CAS_USERNAME' in session:
-            username = session['CAS_USERNAME']
-            userPlaylists = playlist.get_all_playlists_by_user(conn,username)
+        if 'uid' in session:
+            uid = session['uid']
+
+            userPlaylists = playlist.get_all_playlists_by_user(conn,uid)
 
             # display playlist info, partitioning the user's playlists into
             # ones with and without the specified song
