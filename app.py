@@ -115,8 +115,8 @@ def explore():
 
     if 'CAS_USERNAME' in session:
         is_logged_in = True
-        return render_template('main.html',page_title='Home',genres=genres,
-                           username=username)
+        return render_template('main.html',page_title='home | coda',
+            genres=genres, username=username)
     else:
         return render_template('login.html')
 
